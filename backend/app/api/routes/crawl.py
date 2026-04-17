@@ -73,12 +73,16 @@ async def run_crawl_in_background(business_profile_id: str, db_session_maker):
         business_profile_id: ID of the business profile
         db_session_maker: Database session maker
     """
+    from loguru import logger as bg_logger
     # Create new database session for background task
     db = db_session_maker()
     try:
-        await CrawlerService.start_crawl(db=db, business_profile_id=business_profile_id)
+        result = await CrawlerService.start_crawl(db=db, business_profile_id=business_profile_id)
+        bg_logger.info(f"Background crawl finished for {business_profile_id}: {result}")
     except Exception as e:
-        print(f"Background crawl error: {e}")
+        bg_logger.error(f"Background crawl error for {business_profile_id}: {type(e).__name__}: {e}")
+        import traceback
+        bg_logger.error(traceback.format_exc())
     finally:
         db.close()
 

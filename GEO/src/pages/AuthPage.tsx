@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Mail, Lock } from "lucide-react";
-import { login, register, APIError } from "../utils/api";
+import { login, register, APIError, getGoogleAuthUrl } from "../utils/api";
 import { setAuthToken } from "../utils/auth";
 
 type Mode = "login" | "signup";
@@ -221,9 +221,11 @@ export default function AuthPage({ onAuthenticated }: AuthPageProps) {
                   <button
                     type="button"
                     className="flex w-36 items-center justify-center gap-2 rounded-full border border-white/30 py-3 text-sm font-semibold text-white transition-all hover:border-blue-400 hover:bg-blue-500/10 hover:shadow-[0_0_15px_rgba(59,130,246,0.5)]"
-                    onClick={() => {
-                      // TODO: Call backend API - POST /api/auth/google-oauth
-                      setFormError("Google OAuth not configured. Please set up backend endpoint.");
+                    onClick={async () => {
+                      setFormError("");
+                      // User must log in with email first, then connect Google on the next step.
+                      // The Google auth URL endpoint requires authentication.
+                      setFormError("Please log in with email first, then connect Google on the next step.");
                     }}
                   >
                     <GoogleLogo />

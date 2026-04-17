@@ -10,10 +10,10 @@ from sqlalchemy.orm import Session
 from typing import List, Dict, Any, Optional
 from pydantic import BaseModel, Field
 from loguru import logger
-import os
 
 from app.core.database import get_db
 from app.core.dependencies import get_current_user
+from app.config import settings
 from app.models.user import User
 from app.models.business_profile import BusinessProfile
 from app.models.geo_prompt import GeoPrompt, GeoPromptResult, ExecutionStatus
@@ -46,6 +46,7 @@ class ExecutionSummary(BaseModel):
     succeeded: int = Field(..., description="Successfully completed prompts")
     failed: int = Field(..., description="Failed prompts")
     duration_ms: int = Field(..., description="Total execution time in milliseconds")
+    error: Optional[str] = Field(None, description="Fatal error message if execution was aborted")
     results: List[PromptExecutionResult]
 
 
@@ -154,16 +155,16 @@ async def run_geo_prompts(
                 detail=f"Business profile {request.entity_id} not found or access denied"
             )
         
-        # Get OpenAI API key from environment
-        openai_api_key = os.getenv("OPENAI_API_KEY")
-        if not openai_api_key:
+        # Get Groq API key from settings
+        groq_api_key = settings.GROQ_API_KEY
+        if not groq_api_key:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="OPENAI_API_KEY not configured"
+                detail="GROQ_API_KEY not configured in .env"
             )
         
         # Initialize executor
-        executor = GeoPromptExecutorService(db=db, openai_api_key=openai_api_key)
+        executor = GeoPromptExecutorService(db=db, groq_api_key=groq_api_key)
         
         # Execute prompts
         logger.info(f"User {current_user.email} executing GEO prompts for business {business.name}")
@@ -293,7 +294,7 @@ async def get_prompt_results(
         
         return PromptResultsResponse(
             business_id=str(business.id),
-            business_name=business.business_name,
+            business_name=business.name,
             total_results=len(results),
             categories=categories_dict
         )

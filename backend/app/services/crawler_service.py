@@ -5,7 +5,7 @@ Orchestrates website crawling using hybrid approach (Scrapy + Playwright fallbac
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from app.models.business_profile import BusinessProfile, CrawlStatus
-from app.models.website_content import WebsiteContent, CrawlStatus as ContentCrawlStatus
+from app.models.website_content import WebsiteContent
 from app.crawlers.playwright_crawler import run_playwright_crawler
 from datetime import datetime
 from typing import List, Dict, Optional
@@ -133,7 +133,6 @@ class CrawlerService:
                     business_profile_id=business_profile_id,
                     url=page_data.get('url', ''),
                     page_type=page_data.get('page_type', 'other'),
-                    crawl_status=ContentCrawlStatus.COMPLETED,
                     raw_html=page_data.get('raw_html', ''),
                     cleaned_text=page_data.get('cleaned_text', ''),
                     title=page_data.get('title', ''),

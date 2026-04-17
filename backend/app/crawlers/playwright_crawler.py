@@ -7,8 +7,18 @@ from bs4 import BeautifulSoup
 from urllib.parse import urlparse, urljoin
 import asyncio
 import re
+import random
 from typing import List, Dict, Optional, Set
 from loguru import logger
+import httpx
+
+# Realistic user agents for stealth
+_USER_AGENTS = [
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:123.0) Gecko/20100101 Firefox/123.0',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.3 Safari/605.1.15',
+]
 
 
 class PlaywrightCrawler:
@@ -50,13 +60,22 @@ class PlaywrightCrawler:
         logger.info(f"Starting Playwright crawl for {self.start_url}")
         
         async with async_playwright() as p:
-            browser = await p.chromium.launch(headless=True)
-            page = await browser.new_page()
-            
-            # Set user agent
-            await page.set_extra_http_headers({
-                'User-Agent': 'GEO-BusinessCrawler/1.0 (+https://geo-platform.com/bot)'
-            })
+            ua = random.choice(_USER_AGENTS)
+            browser = await p.chromium.launch(
+                headless=True,
+                args=['--disable-blink-features=AutomationControlled']
+            )
+            context = await browser.new_context(
+                user_agent=ua,
+                viewport={'width': 1920, 'height': 1080},
+                java_script_enabled=True,
+                locale='en-US',
+            )
+            # Remove webdriver flag so sites don't detect automation
+            await context.add_init_script("""
+                Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
+            """)
+            page = await context.new_page()
             
             try:
                 while self.url_queue and len(self.pages_data) < self.max_pages:
@@ -86,10 +105,58 @@ class PlaywrightCrawler:
                 logger.error(f"Error during Playwright crawl: {e}")
             
             finally:
+                await context.close()
                 await browser.close()
+        
+        # If Playwright got zero pages, fallback to simple httpx fetch
+        if not self.pages_data:
+            logger.warning(f"Playwright got 0 pages, trying httpx fallback for {self.start_url}")
+            fallback = await self._httpx_fallback(self.start_url)
+            if fallback:
+                self.pages_data.append(fallback)
         
         logger.info(f"Playwright crawl completed. Pages crawled: {len(self.pages_data)}")
         return self.pages_data
+    
+    async def _httpx_fallback(self, url: str) -> Optional[Dict]:
+        """Simple httpx GET as fallback when Playwright is blocked."""
+        try:
+            ua = random.choice(_USER_AGENTS)
+            async with httpx.AsyncClient(
+                follow_redirects=True,
+                timeout=20.0,
+                headers={'User-Agent': ua, 'Accept': 'text/html,application/xhtml+xml,*/*', 'Accept-Language': 'en-US,en;q=0.9'}
+            ) as client:
+                resp = await client.get(url)
+                if resp.status_code >= 400:
+                    logger.warning(f"httpx fallback failed for {url}: HTTP {resp.status_code}")
+                    return None
+                html = resp.text
+                title_match = re.search(r'<title[^>]*>(.*?)</title>', html, re.IGNORECASE | re.DOTALL)
+                title = title_match.group(1).strip() if title_match else ''
+                cleaned_text = self._extract_clean_text(html)
+                nap_data = self._extract_nap_data(cleaned_text)
+                soup = BeautifulSoup(html, 'html.parser')
+                meta_tag = soup.find('meta', attrs={'name': 'description'})
+                meta_desc = meta_tag.get('content', '') if meta_tag else ''
+                h1s = [h.get_text(strip=True) for h in soup.find_all('h1') if h.get_text(strip=True)]
+                h2s = [h.get_text(strip=True) for h in soup.find_all('h2') if h.get_text(strip=True)]
+                logger.info(f"httpx fallback succeeded for {url}: {len(cleaned_text.split())} words")
+                return {
+                    'url': url,
+                    'page_type': 'homepage',
+                    'title': title,
+                    'meta_description': meta_desc,
+                    'h1_tags': h1s[:10],
+                    'h2_tags': h2s[:20],
+                    'raw_html': html,
+                    'cleaned_text': cleaned_text,
+                    'word_count': len(cleaned_text.split()),
+                    **nap_data
+                }
+        except Exception as e:
+            logger.error(f"httpx fallback failed for {url}: {e}")
+            return None
     
     async def _crawl_page(self, page: Page, url: str, depth: int) -> Optional[Dict]:
         """
@@ -106,22 +173,35 @@ class PlaywrightCrawler:
         try:
             logger.info(f"Crawling: {url} (depth: {depth})")
             
-            # Navigate to page
-            response = await page.goto(url, wait_until='networkidle', timeout=15000)
+            # Navigate to page — try networkidle first, fall back to domcontentloaded
+            response = None
+            for wait_strategy in ['networkidle', 'domcontentloaded']:
+                try:
+                    response = await page.goto(url, wait_until=wait_strategy, timeout=20000)
+                    break
+                except Exception:
+                    if wait_strategy == 'networkidle':
+                        logger.debug(f"networkidle timed out for {url}, trying domcontentloaded")
+                        continue
+                    raise
             
             if not response or response.status >= 400:
                 logger.warning(f"Failed to load {url}: Status {response.status if response else 'None'}")
                 return None
             
             # Wait for content to render
-            await asyncio.sleep(1)
+            await asyncio.sleep(1.5)
             
             # Get page content
             html = await page.content()
             title = await page.title()
             
             # Extract meta description
-            meta_description = await page.locator('meta[name="description"]').get_attribute('content') or ''
+            try:
+                meta_el = page.locator('meta[name="description"]')
+                meta_description = await meta_el.get_attribute('content', timeout=3000) or ''
+            except Exception:
+                meta_description = ''
             
             # Extract headings
             h1_elements = await page.locator('h1').all_text_contents()
