@@ -45,7 +45,7 @@ class GeoPrompt(Base):
     version = Column(String(20), nullable=False, default="1.0")
     
     # Classification
-    category = Column(SQLEnum(PromptCategory), nullable=False, index=True)
+    category = Column(SQLEnum(PromptCategory, values_callable=lambda x: [e.value for e in x]), nullable=False, index=True)
     title = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
     
@@ -94,7 +94,7 @@ class GeoPromptResult(Base):
     user_id = Column(String(36), ForeignKey("users.id"), nullable=False, index=True)
     
     # Execution Metadata
-    execution_status = Column(SQLEnum(ExecutionStatus), nullable=False, default=ExecutionStatus.PENDING, index=True)
+    execution_status = Column(SQLEnum(ExecutionStatus, values_callable=lambda x: [e.value for e in x]), nullable=False, default=ExecutionStatus.PENDING, index=True)
     execution_timestamp = Column(DateTime, nullable=False, default=datetime.utcnow, index=True)
     execution_duration_ms = Column(Integer, nullable=True)  # Execution time in milliseconds
     

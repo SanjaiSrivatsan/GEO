@@ -51,8 +51,8 @@ class BusinessService:
             updated_at=datetime.utcnow()
         )
         
-        # Set crawl_status using string value to avoid enum serialization issues
-        business_profile.crawl_status = "not_started"
+        # Set crawl_status using enum value
+        business_profile.crawl_status = CrawlStatus.NOT_STARTED
 
         # Add to database
         db.add(business_profile)

@@ -250,7 +250,8 @@ class GoogleOAuthService:
             return {
                 "connected": False,
                 "email": None,
-                "connected_at": None
+                "connected_at": None,
+                "last_synced_at": None
             }
         
         return {

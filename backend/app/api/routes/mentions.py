@@ -3,7 +3,8 @@ Brand Mention Discovery API Routes
 """
 from fastapi import APIRouter, Depends, HTTPException, Query, status, BackgroundTasks
 from sqlalchemy.orm import Session
-from app.core.dependencies import get_db, get_current_user
+from app.core.database import get_db
+from app.core.dependencies import get_current_user
 from app.models.user import User
 from app.models.brand_mention import MentionType, SentimentType, MentionStatus
 from app.services.mention_discovery_service import MentionDiscoveryService
@@ -20,6 +21,7 @@ class StartDiscoveryRequest(BaseModel):
     entity_id: str
     use_google: bool = True
     use_bing: bool = True
+    use_duckduckgo: bool = True
     max_results_per_query: int = 10
 
 
@@ -31,6 +33,8 @@ class DiscoveryStatusResponse(BaseModel):
     updated_mentions: int
     skipped_duplicates: int
     total_mentions: int
+    engines_used: List[str] = []
+    sentiment_engine: str = "rule_based"
 
 
 class MentionItem(BaseModel):
@@ -126,6 +130,7 @@ async def start_discovery(
             user_id=current_user.id,
             use_google=request.use_google,
             use_bing=request.use_bing,
+            use_duckduckgo=request.use_duckduckgo,
             max_results_per_query=request.max_results_per_query
         )
         

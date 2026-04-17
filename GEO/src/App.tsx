@@ -3,26 +3,32 @@ import AuthPage from "./pages/AuthPage";
 import BusinessFormPage from "./pages/BusinessFormPage";
 import ConnectGooglePage from "./pages/ConnectGooglePage";
 import GeoDashboardPage from "./pages/GeoDashboardPage";
+import BISResultsPage from "./pages/BISResultsPage";
 import type { BusinessDetails } from "./types";
-import { removeAuthToken } from "./utils/auth";
+import { removeAuthToken, isAuthenticated } from "./utils/auth";
 
 export default function App() {
-  const [isAuthed, setIsAuthed] = useState(false);
-  const [businessDetails, setBusinessDetails] = useState<BusinessDetails | null>(null);
+  // Auto-authenticate if a JWT token already exists in localStorage
+  // (handles page reloads and post-OAuth redirects)
+  const [isAuthed, setIsAuthed] = useState(isAuthenticated());
+  const [businessDetails, setBusinessDetails] =
+    useState<BusinessDetails | null>(null);
   const [isEditingBusiness, setIsEditingBusiness] = useState(false);
   const [isGoogleConnected, setIsGoogleConnected] = useState(false);
   const [hasCompletedGoogleStep, setHasCompletedGoogleStep] = useState(false);
+  const [showBIS, setShowBIS] = useState(false);
 
   const handleLogout = () => {
     // Clear JWT token from localStorage
     removeAuthToken();
-    
+
     // Reset application state
     setIsAuthed(false);
     setBusinessDetails(null);
     setIsEditingBusiness(false);
     setIsGoogleConnected(false);
     setHasCompletedGoogleStep(false);
+    setShowBIS(false);
   };
 
   const handleBusinessSubmit = (details: BusinessDetails) => {
@@ -30,7 +36,10 @@ export default function App() {
     setIsEditingBusiness(false);
   };
 
-  const handleGoogleConnection = (connected: boolean, details?: BusinessDetails) => {
+  const handleGoogleConnection = (
+    connected: boolean,
+    details?: BusinessDetails,
+  ) => {
     setIsGoogleConnected(connected);
     if (connected) {
       setHasCompletedGoogleStep(true);
@@ -72,10 +81,21 @@ export default function App() {
     );
   }
 
-  return (
-      <GeoDashboardPage
+  if (showBIS && businessDetails) {
+    return (
+      <BISResultsPage
+        businessName={businessDetails.name}
+        onBack={() => setShowBIS(false)}
         onLogout={handleLogout}
-        onBackToSetup={() => setIsEditingBusiness(true)}
       />
+    );
+  }
+
+  return (
+    <GeoDashboardPage
+      onLogout={handleLogout}
+      onBackToSetup={() => setIsEditingBusiness(true)}
+      onNavigateBIS={() => setShowBIS(true)}
+    />
   );
 }

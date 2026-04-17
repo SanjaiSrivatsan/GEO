@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, DateTime, Text, ForeignKey, Integer, Enum as SQLEnum
+from sqlalchemy import Column, String, DateTime, Text, ForeignKey, Integer
 from sqlalchemy.sql import func
 from app.core.database import Base
 import uuid
@@ -23,7 +23,6 @@ class WebsiteContent(Base):
     # Crawl metadata
     url = Column(String(2048), nullable=False)
     page_type = Column(String(100))  # homepage, about, contact, faq, service, etc.
-    crawl_status = Column(SQLEnum(CrawlStatus), default=CrawlStatus.PENDING, nullable=False)
     
     # Content storage
     raw_html = Column(Text)  # Original HTML

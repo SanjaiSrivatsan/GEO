@@ -38,12 +38,20 @@ scrapy==2.11.0
 # Reddit API
 praw==7.7.1
 
-# AI & NLP (LangChain - LIMITED USE)
-langchain==0.1.4
-langchain-openai==0.0.5
-langchain-community==0.0.16
-openai==1.10.0
-tiktoken==0.5.2
+# Sentiment Analysis
+vaderSentiment==3.3.2
+
+# Search Engines
+duckduckgo-search>=4.0
+ddgs>=0.1.0
+
+# JSON repair for robust LLM output parsing
+json-repair>=0.30.0
+
+# AI & NLP (LangChain + Groq)
+langchain>=0.1.4
+langchain-groq>=0.1.0
+langchain-community>=0.0.16
 
 # Data Processing
 pandas==2.2.0

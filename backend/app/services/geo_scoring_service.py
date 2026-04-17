@@ -20,6 +20,33 @@ from loguru import logger
 from app.models import GeoScore, GeoPromptResult, ExecutionStatus, BusinessProfile
 
 
+def _to_str(value) -> str:
+    """Safely coerce LLM response field to a string.
+    
+    The LLM sometimes returns dicts like {"text": "KFC", "source_url": "..."}  
+    instead of plain strings. This helper extracts the 'text' field,
+    or joins list elements, or converts to str.
+    """
+    if value is None:
+        return ""
+    if isinstance(value, str):
+        return value.strip()
+    if isinstance(value, dict):
+        # Try common keys first
+        for key in ("text", "value", "name", "display_name"):
+            if key in value and isinstance(value[key], str):
+                return value[key].strip()
+        # Fallback: first string value in the dict
+        for v in value.values():
+            if isinstance(v, str) and v.strip():
+                return v.strip()
+        return str(value)
+    if isinstance(value, (list, tuple)):
+        parts = [_to_str(item) for item in value if item]
+        return ", ".join(parts)
+    return str(value).strip()
+
+
 class GeoScoringService:
     """Deterministic scoring service - converts prompt results into explainable metrics"""
     
@@ -72,7 +99,7 @@ class GeoScoringService:
         logger.info(f"Found {len(results)} completed prompt results")
         
         # Compute each dimension
-        presence_score, presence_breakdown = self._compute_presence_score(results)
+        presence_score, presence_breakdown = self._compute_presence_score(results, business_profile_id)
         accuracy_score, accuracy_breakdown = self._compute_accuracy_score(results)
         trust_score, trust_breakdown = self._compute_trust_score(results)
         hallucination_penalty, hallucination_breakdown = self._compute_hallucination_penalty(results)
@@ -145,7 +172,8 @@ class GeoScoringService:
     
     def _compute_presence_score(
         self,
-        results: List[GeoPromptResult]
+        results: List[GeoPromptResult],
+        business_profile_id: str
     ) -> Tuple[Decimal, Dict]:
         """
         Presence Score (35% weight) - Brand visibility and citation frequency
@@ -161,41 +189,41 @@ class GeoScoringService:
             (score, breakdown_dict)
         """
         # Find relevant prompt results
-        entity_def_results = [r for r in results if r.prompt_id.startswith("entity_def")]
-        local_disc_results = [r for r in results if r.prompt_id.startswith("local_disc")]
+        entity_def_results = [r for r in results if r.prompt.prompt_id.startswith("entity_def")]
+        local_disc_results = [r for r in results if r.prompt.prompt_id.startswith("local_disc")]
         
-        # 1. Brand mentions count (from entity definition prompts)
-        mentions_count = 0
-        for result in entity_def_results:
-            if result.cited_sources:
-                # Count unique mentions
-                mention_ids = set()
-                for source in result.cited_sources:
-                    if source.get("mention_id"):
-                        mention_ids.add(source["mention_id"])
-                mentions_count += len(mention_ids)
+        # ---- Use REAL brand_mentions DB table for mentions + directory counts ----
+        from app.services.mention_discovery_service import MentionDiscoveryService
+        db_mention_counts = MentionDiscoveryService.get_mention_counts_for_scoring(
+            self.db, business_profile_id
+        )
+        
+        # 1. Brand mentions count (from actual discovered mentions in DB)
+        mentions_count = db_mention_counts.get("total_mentions", 0)
         
         # Normalize: 0 mentions = 0, 10+ mentions = 100
         mentions_score = min(Decimal("100.00"), Decimal(str(mentions_count * 10)))
         
-        # 2. Directory presence (from local discovery prompts)
-        directory_count = 0
-        directories = []
+        # 2. Directory presence (from actual discovered directory-type mentions)
+        directory_count = db_mention_counts.get("directory_count", 0)
+        directories = []  # Detailed list populated from LLM if available
         for result in local_disc_results:
             if result.structured_response:
-                # Check for directory listings in structured response
                 if isinstance(result.structured_response, dict):
                     directories_found = result.structured_response.get("directories", [])
                     if isinstance(directories_found, list):
-                        directory_count += len(directories_found)
                         directories.extend(directories_found)
         
         # Normalize: 0 directories = 0, 5+ directories = 100
         directory_score = min(Decimal("100.00"), Decimal(str(directory_count * 20)))
         
-        # 3. Local citations (from local discovery prompts)
+        # 3. Local citations (from LLM prompt results)
         citation_count = 0
         for result in local_disc_results:
+            if result.cited_sources:
+                citation_count += len(result.cited_sources)
+        # Also count citations from entity definition prompts
+        for result in entity_def_results:
             if result.cited_sources:
                 citation_count += len(result.cited_sources)
         
@@ -248,8 +276,8 @@ class GeoScoringService:
         Returns:
             (score, breakdown_dict)
         """
-        entity_def_results = [r for r in results if r.prompt_id.startswith("entity_def")]
-        category_vis_results = [r for r in results if r.prompt_id.startswith("category_vis")]
+        entity_def_results = [r for r in results if r.prompt.prompt_id.startswith("entity_def")]
+        category_vis_results = [r for r in results if r.prompt.prompt_id.startswith("category_vis")]
         
         # 1. NAP Consistency (Name, Address, Phone)
         nap_variants = {
@@ -265,12 +293,13 @@ class GeoScoringService:
                 phone = result.structured_response.get("phone")
                 
                 if name:
-                    nap_variants["names"].add(name.strip().lower())
+                    nap_variants["names"].add(_to_str(name).lower())
                 if address:
-                    nap_variants["addresses"].add(address.strip().lower())
+                    nap_variants["addresses"].add(_to_str(address).lower())
                 if phone:
                     # Normalize phone: remove spaces, dashes, parentheses
-                    normalized_phone = "".join(c for c in phone if c.isdigit())
+                    phone_str = _to_str(phone)
+                    normalized_phone = "".join(c for c in phone_str if c.isdigit())
                     if normalized_phone:
                         nap_variants["phones"].add(normalized_phone)
         
@@ -298,7 +327,7 @@ class GeoScoringService:
             if result.structured_response and isinstance(result.structured_response, dict):
                 category = result.structured_response.get("category")
                 if category:
-                    category_mentions.append(category.strip().lower())
+                    category_mentions.append(_to_str(category).lower())
         
         # Check if categories are consistent
         unique_categories = len(set(category_mentions))
@@ -384,22 +413,25 @@ class GeoScoringService:
         Returns:
             (score, breakdown_dict)
         """
-        trust_review_results = [r for r in results if r.prompt_id.startswith("trust_rev")]
+        trust_review_results = [r for r in results if r.prompt.prompt_id.startswith("trust_rev")]
         
         # 1. Review Sentiment
         sentiment_score = Decimal("50.00")  # Default neutral
         sentiment_data = {}
         
         for result in trust_review_results:
-            if result.prompt_id == "trust_rev_001":  # Sentiment analysis prompt
+            if result.prompt.prompt_id == "trust_rev_001":  # Sentiment analysis prompt
                 if result.structured_response and isinstance(result.structured_response, dict):
                     sentiment_data = result.structured_response
                     # Look for sentiment score (should be 0-100)
                     if "sentiment_score" in sentiment_data:
-                        sentiment_score = Decimal(str(sentiment_data["sentiment_score"]))
+                        try:
+                            sentiment_score = Decimal(str(sentiment_data["sentiment_score"]))
+                        except Exception:
+                            pass
                     elif "overall_sentiment" in sentiment_data:
                         # Convert text sentiment to score
-                        sentiment_text = sentiment_data["overall_sentiment"].lower()
+                        sentiment_text = _to_str(sentiment_data["overall_sentiment"]).lower()
                         if "positive" in sentiment_text:
                             sentiment_score = Decimal("80.00")
                         elif "negative" in sentiment_text:
@@ -424,15 +456,18 @@ class GeoScoringService:
         response_rate = Decimal("0.00")
         
         for result in trust_review_results:
-            if result.prompt_id == "trust_rev_004":  # Trust credentials prompt
+            if result.prompt.prompt_id == "trust_rev_004":  # Trust credentials prompt
                 if result.structured_response and isinstance(result.structured_response, dict):
                     certs = result.structured_response.get("certifications", [])
                     if isinstance(certs, list):
                         trust_signals.extend(certs)
             
-            if result.prompt_id == "trust_rev_005":  # Response behavior prompt
+            if result.prompt.prompt_id == "trust_rev_005":  # Response behavior prompt
                 if result.structured_response and isinstance(result.structured_response, dict):
-                    response_rate = Decimal(str(result.structured_response.get("response_rate", 0)))
+                    try:
+                        response_rate = Decimal(str(result.structured_response.get("response_rate", 0)))
+                    except Exception:
+                        response_rate = Decimal("0.00")
         
         # Calculate trust signals score
         signal_count = len(trust_signals)
@@ -502,8 +537,8 @@ class GeoScoringService:
             if not has_citations:
                 uncited_count += 1
                 uncited_prompts.append({
-                    "prompt_id": result.prompt_id,
-                    "prompt_title": result.prompt_title
+                    "prompt_id": result.prompt.prompt_id,
+                    "prompt_title": result.prompt.title
                 })
         
         # 2. Check for low confidence scores
@@ -511,21 +546,21 @@ class GeoScoringService:
             if result.confidence_score is not None and result.confidence_score < 0.5:
                 low_confidence_count += 1
                 low_confidence_prompts.append({
-                    "prompt_id": result.prompt_id,
-                    "prompt_title": result.prompt_title,
+                    "prompt_id": result.prompt.prompt_id,
+                    "prompt_title": result.prompt.title,
                     "confidence": float(result.confidence_score)
                 })
         
         # 3. Check for contradictions (simplified - check NAP variants from accuracy computation)
         # This would ideally be more sophisticated in production
-        entity_def_results = [r for r in results if r.prompt_id.startswith("entity_def")]
+        entity_def_results = [r for r in results if r.prompt.prompt_id.startswith("entity_def")]
         
         names = set()
         for result in entity_def_results:
             if result.structured_response and isinstance(result.structured_response, dict):
                 name = result.structured_response.get("business_name")
                 if name:
-                    names.add(name.strip().lower())
+                    names.add(_to_str(name).lower())
         
         if len(names) > 2:
             contradiction_count += 1

@@ -5,6 +5,7 @@ Request/response models for business profile operations.
 """
 
 from datetime import datetime
+from typing import Optional
 from pydantic import BaseModel, Field, field_validator
 
 
@@ -39,9 +40,9 @@ class BusinessProfileResponse(BaseModel):
     name: str
     category: str
     primary_location: str
-    website: str
-    brand_voice: str
-    main_goal: str
+    website: Optional[str] = ""
+    brand_voice: Optional[str] = ""
+    main_goal: Optional[str] = ""
     created_at: datetime
     updated_at: datetime
 

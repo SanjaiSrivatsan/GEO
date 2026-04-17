@@ -14,31 +14,32 @@ from typing import Dict, Any, List, Optional, Tuple
 from sqlalchemy.orm import Session
 from loguru import logger
 
-from langchain_openai import ChatOpenAI
-from langchain.prompts import ChatPromptTemplate
-from langchain.output_parsers import PydanticOutputParser
+from langchain_groq import ChatGroq
+from langchain_core.prompts import ChatPromptTemplate
 from pydantic import BaseModel, ValidationError
 
+from app.config import settings
 from app.models.geo_prompt import GeoPrompt, GeoPromptResult, ExecutionStatus
 from app.models.business_profile import BusinessProfile
 from app.models.website_content import WebsiteContent
 from app.models.google_review import GoogleReview
 from app.models.brand_mention import BrandMention
+from app.models.google_location import GoogleLocation
 
 
 class GeoPromptExecutorService:
     """Execute GEO prompts using LangChain with real business data."""
     
-    def __init__(self, db: Session, openai_api_key: str):
-        """Initialize executor with database session and OpenAI API key."""
+    def __init__(self, db: Session, groq_api_key: str):
+        """Initialize executor with database session and Groq API key."""
         self.db = db
-        self.openai_api_key = openai_api_key
-        # Initialize LangChain LLM with temperature ≤0.3
-        self.llm = ChatOpenAI(
-            model="gpt-4",
+        self.groq_api_key = groq_api_key
+        # Initialize LangChain LLM with Groq (Llama 3.3 70B)
+        self.llm = ChatGroq(
+            model=settings.GROQ_MODEL,
             temperature=0.2,
-            openai_api_key=openai_api_key,
-            max_tokens=1000
+            groq_api_key=groq_api_key,
+            max_tokens=1500
         )
     
     def assemble_business_context(self, business_profile_id: str) -> Dict[str, Any]:
@@ -61,9 +62,11 @@ class GeoPromptExecutorService:
             WebsiteContent.business_profile_id == business_profile_id
         ).all()
         
-        # Get Google reviews
-        google_reviews = self.db.query(GoogleReview).filter(
-            GoogleReview.business_profile_id == business_profile_id
+        # Get Google reviews (joined through GoogleLocation)
+        google_reviews = self.db.query(GoogleReview).join(
+            GoogleLocation, GoogleReview.google_location_id == GoogleLocation.id
+        ).filter(
+            GoogleLocation.business_profile_id == business_profile_id
         ).all()
         
         # Get brand mentions
@@ -74,17 +77,17 @@ class GeoPromptExecutorService:
         context = {
             "business_metadata": {
                 "id": str(business.id),
-                "name": business.business_name,
+                "name": business.name,
                 "category": business.category,
-                "website_url": business.website_url,
-                "description": business.description
+                "website_url": business.website,
+                "description": business.brand_voice or business.main_goal or ""
             },
             "website_content": [
                 {
                     "page_id": str(page.id),
                     "url": page.url,
-                    "title": page.page_title,
-                    "content": page.text_content[:2000] if page.text_content else "",  # Limit to 2000 chars per page
+                    "title": page.title,
+                    "content": page.cleaned_text[:2000] if page.cleaned_text else "",  # Limit to 2000 chars per page
                     "meta_description": page.meta_description
                 }
                 for page in website_pages[:10]  # Limit to 10 pages
@@ -93,9 +96,9 @@ class GeoPromptExecutorService:
                 {
                     "review_id": str(review.id),
                     "rating": review.rating,
-                    "text": review.text_content,
+                    "text": review.review_text,
                     "reviewer_name": review.reviewer_name,
-                    "sentiment": review.sentiment.value if review.sentiment else None,
+                    "sentiment": review.sentiment_label.value if review.sentiment_label else None,
                     "created_at": review.review_date.isoformat() if review.review_date else None
                 }
                 for review in google_reviews[:50]  # Limit to 50 reviews
@@ -114,7 +117,7 @@ class GeoPromptExecutorService:
             ]
         }
         
-        logger.info(f"Assembled context for {business.business_name}: "
+        logger.info(f"Assembled context for {business.name}: "
                    f"{len(context['website_content'])} pages, "
                    f"{len(context['google_reviews'])} reviews, "
                    f"{len(context['brand_mentions'])} mentions")
@@ -172,16 +175,108 @@ class GeoPromptExecutorService:
         
         return "\n".join(formatted)
     
+    def _extract_json_from_text(self, text: str) -> str:
+        """
+        Extract JSON from LLM response that may be wrapped in markdown code blocks
+        or contain extra text around the JSON object.
+        Also attempts to fix common LLM JSON errors like trailing commas.
+        """
+        import re
+        
+        if not text or not text.strip():
+            return text
+        
+        # Try 1: Extract from ```json ... ``` or ``` ... ``` code blocks
+        code_block_match = re.search(r'```(?:json)?\s*\n?([\s\S]*?)\n?```', text)
+        if code_block_match:
+            candidate = code_block_match.group(1).strip()
+            fixed = self._fix_json_string(candidate)
+            return fixed
+        
+        # Try 2: Find the first { ... } or [ ... ] JSON structure
+        stripped = text.strip()
+        
+        # Find first { and last }
+        brace_start = stripped.find('{')
+        brace_end = stripped.rfind('}')
+        if brace_start != -1 and brace_end > brace_start:
+            candidate = stripped[brace_start:brace_end + 1]
+            fixed = self._fix_json_string(candidate)
+            try:
+                json.loads(fixed)
+                return fixed
+            except json.JSONDecodeError:
+                pass
+        
+        # Find first [ and last ]
+        bracket_start = stripped.find('[')
+        bracket_end = stripped.rfind(']')
+        if bracket_start != -1 and bracket_end > bracket_start:
+            candidate = stripped[bracket_start:bracket_end + 1]
+            fixed = self._fix_json_string(candidate)
+            try:
+                json.loads(fixed)
+                return fixed
+            except json.JSONDecodeError:
+                pass
+        
+        # Return as-is if no extraction worked
+        return text
+    
+    def _fix_json_string(self, s: str) -> str:
+        """Attempt to fix common LLM JSON issues."""
+        import re
+        # Remove inline citation patterns like ](url...) or ]("url1", "url2")
+        s = re.sub(r'\]\s*\((?:"?https?://[^)]*"?(?:\s*,\s*"?https?://[^)]*"?)*)\)', ']', s)
+        # Remove inline citation patterns like "value"(url) or "value" (url)
+        s = re.sub(r'"(\s*)\((?:"?https?://[^)]*"?(?:\s*,\s*"?https?://[^)]*"?)*)\)', r'"\1', s)
+        # Remove citation after numbers like 70("url") or 70 ("url")
+        s = re.sub(r'(\d)\s*\((?:"?https?://[^)]*"?(?:\s*,\s*"?https?://[^)]*"?)*)\)', r'\1', s)
+        # Remove trailing commas before } or ]
+        s = re.sub(r',\s*([}\]])', r'\1', s)
+        # Replace single quotes with double quotes if needed
+        try:
+            json.loads(s)
+            return s
+        except json.JSONDecodeError:
+            pass
+        attempt = s.replace("'", '"')
+        try:
+            json.loads(attempt)
+            return attempt
+        except json.JSONDecodeError:
+            pass
+        return s
+
     def validate_json_output(self, output: str, expected_schema: Dict[str, Any]) -> Tuple[bool, Optional[Dict], Optional[str]]:
         """
         Validate LLM output against expected JSON schema.
+        Handles markdown-wrapped JSON and extra text around JSON.
+        Uses json_repair as a final fallback for malformed LLM output.
         
         Returns:
             (is_valid, parsed_json, error_message)
         """
         try:
-            # Try to parse as JSON
-            parsed = json.loads(output)
+            # Extract JSON from possible markdown/text wrapping
+            cleaned = self._extract_json_from_text(output)
+            
+            # Try 1: standard json.loads
+            try:
+                parsed = json.loads(cleaned)
+            except json.JSONDecodeError:
+                # Try 2: json_repair — handles unescaped quotes, missing commas, trailing commas, etc.
+                try:
+                    from json_repair import repair_json
+                    repaired = repair_json(cleaned, return_objects=True)
+                    if isinstance(repaired, (dict, list)):
+                        parsed = repaired
+                        logger.debug("JSON repaired successfully via json_repair")
+                    else:
+                        # repair_json returned a string — parse it
+                        parsed = json.loads(repair_json(cleaned))
+                except Exception:
+                    raise  # will be caught below
             
             # Basic schema validation (check required fields)
             if "required" in expected_schema:
@@ -192,6 +287,7 @@ class GeoPromptExecutorService:
             return True, parsed, None
             
         except json.JSONDecodeError as e:
+            logger.debug(f"JSON parse failed. Raw output (first 300 chars): {output[:300]}")
             return False, None, f"Invalid JSON: {str(e)}"
         except Exception as e:
             return False, None, f"Validation error: {str(e)}"
@@ -249,7 +345,7 @@ class GeoPromptExecutorService:
         business_profile_id: str,
         user_id: str,
         context: Dict[str, Any],
-        max_retries: int = 1
+        max_retries: int = 2
     ) -> GeoPromptResult:
         """
         Execute a single GEO prompt using LangChain.
@@ -274,8 +370,8 @@ class GeoPromptExecutorService:
             user_id=user_id,
             execution_status=ExecutionStatus.PENDING,
             execution_timestamp=datetime.utcnow(),
-            model_name="gpt-4",
-            model_version="gpt-4-0613",
+            model_name=settings.GROQ_MODEL,
+            model_version=settings.GROQ_MODEL,
             retry_count=0,
             created_at=datetime.utcnow(),
             updated_at=datetime.utcnow()
@@ -293,8 +389,10 @@ class GeoPromptExecutorService:
             formatted_context = self.format_context_for_prompt(context, prompt.category.value)
             
             # Build LangChain prompt
+            system_msg = prompt.system_message or "You are a business analyst providing factual analysis."
+            system_msg += "\n\nIMPORTANT: You MUST respond with ONLY a valid JSON object. No markdown, no code blocks, no explanation text. Output raw JSON only."
             prompt_template = ChatPromptTemplate.from_messages([
-                ("system", prompt.system_message or "You are a business analyst providing factual analysis."),
+                ("system", system_msg),
                 ("user", f"{prompt.prompt_text}\n\n### BUSINESS DATA ###\n{formatted_context}")
             ])
             
@@ -334,10 +432,17 @@ class GeoPromptExecutorService:
                             time.sleep(1)  # Brief delay before retry
                 
                 except Exception as e:
-                    logger.error(f"Execution error (attempt {attempt + 1}): {str(e)}")
-                    validation_error = str(e)
+                    error_str = str(e)
+                    logger.error(f"Execution error (attempt {attempt + 1}): {error_str}")
+                    validation_error = error_str
                     if attempt < max_retries:
-                        time.sleep(1)
+                        # Use longer backoff for rate limit errors
+                        if '429' in error_str or 'rate_limit' in error_str.lower():
+                            wait_time = 10 * (attempt + 1)  # 10s, 20s backoff
+                            logger.info(f"Rate limited, waiting {wait_time}s before retry...")
+                            time.sleep(wait_time)
+                        else:
+                            time.sleep(1)
             
             # Calculate execution time
             execution_duration = int((time.time() - start_time) * 1000)
@@ -449,15 +554,21 @@ class GeoPromptExecutorService:
         results = []
         succeeded = 0
         failed = 0
+        fatal_error = None
         
         for i, prompt in enumerate(prompts, 1):
             logger.info(f"[{i}/{len(prompts)}] Executing {prompt.prompt_id}...")
+            
+            # Rate limit delay between prompts (Gemini free tier)
+            if i > 1:
+                time.sleep(2)  # 2 second delay between prompts
             
             result = self.execute_single_prompt(
                 prompt=prompt,
                 business_profile_id=business_profile_id,
                 user_id=user_id,
-                context=context
+                context=context,
+                max_retries=0  # No retries to conserve free tier quota (20 req/day)
             )
             
             results.append(result)
@@ -466,6 +577,16 @@ class GeoPromptExecutorService:
                 succeeded += 1
             else:
                 failed += 1
+                # Fail fast on quota/auth errors - no point trying remaining prompts
+                if result.error_message and any(err in result.error_message.lower() for err in [
+                    'insufficient_quota', 'invalid_api_key', 'authentication_error',
+                    'billing', 'api_key_invalid', 'rate_limit_exceeded',
+                    'permission_denied', 'api key not valid', 'quota exceeded',
+                    'invalid api key', 'org_restricted'
+                ]):
+                    fatal_error = result.error_message
+                    logger.error(f"Fatal API error detected, skipping remaining {len(prompts) - i} prompts: {fatal_error[:200]}")
+                    break
         
         total_duration = int((time.time() - start_time) * 1000)
         
@@ -474,6 +595,7 @@ class GeoPromptExecutorService:
             "succeeded": succeeded,
             "failed": failed,
             "duration_ms": total_duration,
+            "error": fatal_error,
             "results": [
                 {
                     "prompt_id": r.prompt.prompt_id,
