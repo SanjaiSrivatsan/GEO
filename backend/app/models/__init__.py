@@ -9,6 +9,11 @@ from .geo_prompt import GeoPrompt, GeoPromptResult, PromptCategory, ExecutionSta
 from .geo_response import GEOResponse, ResponseStatus
 from .geo_score import GeoScore
 from .chat_session import ChatSession, ChatMessage, SessionStatus
+from .canonical_entity import CanonicalEntity
+from .gap_issue import GapIssue, GapType, GapSeverity, GapStatus
+from .reinforcement_task import ReinforcementTask, TaskImpact, TaskStatus
+from .simulation_run import SimulationRun
+from .reasoning_analysis import ReasoningAnalysis, ReinforcementClass
 
 __all__ = [
     "User",
@@ -34,4 +39,15 @@ __all__ = [
     "ChatSession",
     "ChatMessage",
     "SessionStatus",
+    "CanonicalEntity",
+    "GapIssue",
+    "GapType",
+    "GapSeverity",
+    "GapStatus",
+    "ReinforcementTask",
+    "TaskImpact",
+    "TaskStatus",
+    "SimulationRun",
+    "ReasoningAnalysis",
+    "ReinforcementClass",
 ]

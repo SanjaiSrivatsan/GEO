@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
 import {
   AlertTriangle,
   ArrowRight,
@@ -11,6 +11,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import type { BusinessDetails } from "../types";
+import { getGoogleAuthUrl, getGoogleConnectionStatus, getGoogleLocations } from "../utils/api";
 
 type ConnectGooglePageProps = {
   onConnect: (details: BusinessDetails) => void;
@@ -106,6 +107,74 @@ export default function ConnectGooglePage({ onConnect, onSkip, onLogout }: Conne
 
   const permissionIssueActive = connectionState === "connected" && googleProfiles.some((profile) => profile.status === "Limited access");
 
+  const loadLocations = useCallback(async () => {
+    setIsLoadingProfiles(true);
+    try {
+      const response = await getGoogleLocations();
+      const mappedProfiles: GoogleProfile[] = response.locations.map((loc) => ({
+        id: loc.google_location_id,
+        name: loc.name,
+        category: loc.category,
+        primaryLocation: loc.full_address,
+        website: loc.website || "",
+        brandVoice: "",
+        mainGoal: "",
+        city: loc.city,
+        state: loc.state,
+        reviews: 0,
+        status:
+          loc.verification_state === "VERIFIED"
+            ? "Verified"
+            : loc.status === "OPEN"
+            ? "Verified"
+            : "Needs attention",
+      }));
+      setGoogleProfiles(mappedProfiles);
+      const verifiedIds = mappedProfiles
+        .filter((p) => p.status === "Verified")
+        .map((p) => p.id);
+      setSelectedProfiles(new Set(verifiedIds));
+    } catch {
+      setConnectionIssue("oauth_failed");
+      setFormError("Connected, but failed to load locations from Google.");
+    } finally {
+      setIsLoadingProfiles(false);
+    }
+  }, []);
+
+  // Detect OAuth callback params in the URL (?google_connected=true or ?google_error=...)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const googleConnected = params.get("google_connected");
+    const googleError = params.get("google_error");
+
+    if (googleConnected === "true") {
+      const email = params.get("email") || "";
+      setConnectedEmail(email);
+      setConnectionState("connected");
+      // Clean the URL so a page refresh doesn't replay this
+      window.history.replaceState({}, "", window.location.pathname);
+      loadLocations();
+    } else if (googleError) {
+      setConnectionIssue("oauth_failed");
+      setFormError(decodeURIComponent(googleError.replace(/\+/g, " ")));
+      window.history.replaceState({}, "", window.location.pathname);
+    } else {
+      // Check if already connected (page refresh / returning user)
+      getGoogleConnectionStatus()
+        .then((status) => {
+          if (status.connected && status.email) {
+            setConnectedEmail(status.email);
+            setConnectionState("connected");
+            loadLocations();
+          }
+        })
+        .catch(() => {
+          // Not connected yet — ignore
+        });
+    }
+  }, [loadLocations]);
+
   const banners = useMemo(() => {
     const items: Array<{ type: ConnectionError; title: string; description: string; actionLabel: string }> = [];
     if (connectionIssue) {
@@ -120,47 +189,16 @@ export default function ConnectGooglePage({ onConnect, onSkip, onLogout }: Conne
   const handleGoogleSignIn = async () => {
     setConnectionIssue(null);
     setConnectionState("connecting");
-    setIsLoadingProfiles(true);
-    
+    setFormError("");
     try {
-      // TODO: Call backend API - POST /api/google/oauth/connect
-      // const response = await fetch('/api/google/oauth/connect', {
-      //   method: 'POST',
-      //   headers: { 
-      //     'Content-Type': 'application/json',
-      //     'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-      //   }
-      // });
-      // if (response.ok) {
-      //   const { oauthUrl } = await response.json();
-      //   window.location.href = oauthUrl;
-      // } else {
-      //   setConnectionIssue("oauth_failed");
-      //   setConnectionState("disconnected");
-      // }
-      
-      // TODO: After OAuth callback - GET /api/google/locations
-      // const locationsResponse = await fetch('/api/google/locations', {
-      //   headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
-      // });
-      // if (locationsResponse.ok) {
-      //   const { connectedEmail: email, locations } = await locationsResponse.json();
-      //   setConnectedEmail(email);
-      //   setGoogleProfiles(locations);
-      //   setConnectionState("connected");
-      //   const verifiedIds = locations.filter(p => p.status === "Verified").map(p => p.id);
-      //   setSelectedProfiles(new Set(verifiedIds));
-      // }
-      
+      // Get the OAuth URL from the backend (includes user identity in state parameter)
+      const { authorization_url } = await getGoogleAuthUrl();
+      // Redirect the browser to Google's consent screen
+      window.location.href = authorization_url;
+    } catch {
       setConnectionIssue("oauth_failed");
       setConnectionState("disconnected");
-      setFormError("Google OAuth not configured. Please set up backend endpoint.");
-    } catch (error) {
-      setConnectionIssue("oauth_failed");
-      setConnectionState("disconnected");
-      setFormError("Failed to connect to Google. Please try again.");
-    } finally {
-      setIsLoadingProfiles(false);
+      setFormError("Failed to get Google sign-in URL. Is the backend running?");
     }
   };
 
@@ -195,27 +233,22 @@ export default function ConnectGooglePage({ onConnect, onSkip, onLogout }: Conne
     }
     setFormError("");
     setIsSyncing(true);
-    
     try {
-      // TODO: Call backend API - POST /api/google/sync
-      // const response = await fetch('/api/google/sync', {
-      //   method: 'POST',
-      //   headers: { 
-      //     'Content-Type': 'application/json',
-      //     'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-      //   },
-      //   body: JSON.stringify({ selectedLocationIds: Array.from(selectedProfiles) })
-      // });
-      // if (response.ok) {
-      //   const { businessDetails } = await response.json();
-      //   onConnect(businessDetails);
-      // } else {
-      //   setFormError("Failed to sync locations. Please try again.");
-      // }
-      
-      setFormError("Sync endpoint not configured. Please set up backend.");
-    } catch (error) {
-      setFormError("Failed to sync locations. Please try again.");
+      // Build BusinessDetails from the first selected profile to pass into the app flow
+      const firstSelected = googleProfiles.find((p) => selectedProfiles.has(p.id));
+      const details: BusinessDetails = firstSelected
+        ? {
+            name: firstSelected.name,
+            category: firstSelected.category,
+            primaryLocation: `${firstSelected.city}, ${firstSelected.state}`,
+            website: firstSelected.website || "",
+            brandVoice: "",
+            mainGoal: "",
+          }
+        : { name: "", category: "", primaryLocation: "", website: "", brandVoice: "", mainGoal: "" };
+      onConnect(details);
+    } catch {
+      setFormError("Failed to proceed. Please try again.");
     } finally {
       setIsSyncing(false);
     }

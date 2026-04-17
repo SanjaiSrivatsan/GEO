@@ -80,8 +80,11 @@ async def get_auth_url(
     Returns authorization URL for user to visit to grant permissions
     """
     try:
-        # Generate state for CSRF protection
-        state = secrets.token_urlsafe(32)
+        import base64
+        # Encode user_id + nonce into state for CSRF protection and user identity in callback
+        nonce = secrets.token_urlsafe(16)
+        state_data = f"{current_user.id}:{nonce}"
+        state = base64.urlsafe_b64encode(state_data.encode()).decode()
         
         # Get authorization URL from OAuth service
         authorization_url = GoogleOAuthService.get_authorization_url(state)
@@ -105,35 +108,51 @@ async def get_auth_url(
 async def oauth_callback(
     code: str = Query(..., description="Authorization code from Google"),
     state: str = Query(..., description="CSRF state token"),
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    db: Session = Depends(get_db)
 ):
     """
-    Handle OAuth callback from Google
-    
-    Exchanges authorization code for access tokens and stores them
+    Handle OAuth callback from Google.
+    User identity is decoded from the state parameter — no Bearer token needed here.
     """
+    import base64 as _b64
     try:
+        # Decode user_id from state
+        try:
+            state_data = _b64.urlsafe_b64decode(state.encode()).decode()
+            user_id = state_data.split(":")[0]
+        except Exception:
+            logger.error("Failed to decode OAuth state parameter")
+            return RedirectResponse(
+                url="http://localhost:5173?google_error=Invalid+OAuth+state"
+            )
+        
+        # Look up the user by user_id embedded in state
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            logger.error(f"User not found for OAuth callback: {user_id}")
+            return RedirectResponse(
+                url="http://localhost:5173?google_error=User+not+found"
+            )
+        
         # Exchange code for tokens
-        result = GoogleOAuthService.exchange_code_for_tokens(code, db, current_user)
+        result = GoogleOAuthService.exchange_code_for_tokens(code, db, user)
         
-        logger.info(f"OAuth completed for user {current_user.id}, email: {result['email']}")
+        logger.info(f"OAuth completed for user {user.id}, email: {result['email']}")
         
-        # Redirect to frontend with success message
-        # Frontend should be running on localhost:5173
+        # Redirect to frontend with success flag
         return RedirectResponse(
-            url=f"http://localhost:5173/dashboard?google_connected=true&email={result['email']}"
+            url=f"http://localhost:5173?google_connected=true&email={result['email']}"
         )
     
     except ValueError as e:
         logger.error(f"OAuth callback error: {e}")
         return RedirectResponse(
-            url=f"http://localhost:5173/dashboard?google_error={str(e)}"
+            url=f"http://localhost:5173?google_error={str(e)}"
         )
     except Exception as e:
         logger.error(f"Unexpected error in OAuth callback: {e}")
         return RedirectResponse(
-            url=f"http://localhost:5173/dashboard?google_error=An+unexpected+error+occurred"
+            url=f"http://localhost:5173?google_error=An+unexpected+error+occurred"
         )
 
 
@@ -146,13 +165,13 @@ async def get_connection_status(
     Get Google connection status for current user
     """
     try:
-        status = GoogleOAuthService.get_connection_status(db, current_user.id)
+        conn_status = GoogleOAuthService.get_connection_status(db, current_user.id)
         
         return ConnectionStatusResponse(
-            connected=status['connected'],
-            email=status['email'],
-            connected_at=status['connected_at'].isoformat() if status['connected_at'] else None,
-            last_synced_at=status['last_synced_at'].isoformat() if status['last_synced_at'] else None
+            connected=conn_status['connected'],
+            email=conn_status['email'],
+            connected_at=conn_status.get('connected_at'),
+            last_synced_at=conn_status.get('last_synced_at')
         )
     
     except Exception as e:

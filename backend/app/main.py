@@ -1,12 +1,31 @@
+import socket
+
+# Force IPv4 DNS resolution (IPv6 to googleapis.com may time out on some networks)
+_original_getaddrinfo = socket.getaddrinfo
+def _forced_ipv4_getaddrinfo(*args, **kwargs):
+    responses = _original_getaddrinfo(*args, **kwargs)
+    ipv4 = [r for r in responses if r[0] == socket.AF_INET]
+    return ipv4 if ipv4 else responses
+socket.getaddrinfo = _forced_ipv4_getaddrinfo
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 from loguru import logger
 import sys
+import os
 
 from app.config import settings
-from app.api.routes import health, auth, business, crawl, google, mentions, geo_prompts, geo_score
+from app.api.routes import (
+    health, auth, business, crawl, google, mentions, geo_prompts, geo_score,
+    canonical_entity, gap_detection, reinforcement, simulation, reasoning,
+    bis,
+)
+
+# Allow OAuth over HTTP for local development (required by oauthlib)
+if settings.ENVIRONMENT == "development":
+    os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 
 
 # Configure logging
@@ -96,6 +115,16 @@ app.include_router(google.router, prefix="/api")
 app.include_router(mentions.router, prefix="/api")
 app.include_router(geo_prompts.router)
 app.include_router(geo_score.router)
+
+# Intelligence engine routes
+app.include_router(canonical_entity.router)
+app.include_router(gap_detection.router)
+app.include_router(reinforcement.router)
+app.include_router(simulation.router)
+app.include_router(reasoning.router)
+
+# BIS routes (standalone)
+app.include_router(bis.router)
 
 
 # Root endpoint

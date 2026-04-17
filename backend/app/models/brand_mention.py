@@ -63,9 +63,9 @@ class BrandMention(Base):
     full_text = Column(Text, nullable=True)  # Full extracted text (optional)
     
     # Classification
-    mention_type = Column(SQLEnum(MentionType), nullable=False, default=MentionType.OTHER, index=True)
-    sentiment = Column(SQLEnum(SentimentType), nullable=False, default=SentimentType.UNKNOWN, index=True)
-    status = Column(SQLEnum(MentionStatus), nullable=False, default=MentionStatus.DISCOVERED, index=True)
+    mention_type = Column(SQLEnum(MentionType, values_callable=lambda x: [e.value for e in x]), nullable=False, default=MentionType.OTHER, index=True)
+    sentiment = Column(SQLEnum(SentimentType, values_callable=lambda x: [e.value for e in x]), nullable=False, default=SentimentType.UNKNOWN, index=True)
+    status = Column(SQLEnum(MentionStatus, values_callable=lambda x: [e.value for e in x]), nullable=False, default=MentionStatus.DISCOVERED, index=True)
     
     # Metadata
     search_query = Column(String(500), nullable=True)  # Query that found this mention

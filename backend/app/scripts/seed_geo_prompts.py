@@ -44,7 +44,7 @@ def seed_prompts(db: Session) -> dict:
                 id=str(uuid.uuid4()),
                 prompt_id=prompt_data["prompt_id"],
                 version=prompt_data["version"],
-                category=prompt_data["category"],  # Already a string, will be converted to enum by SQLAlchemy
+                category=PromptCategory(prompt_data["category"]),  # Convert string value to enum member
                 title=prompt_data["title"],
                 description=prompt_data.get("description"),
                 prompt_text=prompt_data["prompt_text"],

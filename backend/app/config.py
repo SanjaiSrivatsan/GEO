@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     
     # Database
     DATABASE_URL: str
+    BIS_DATABASE_URL: str = ""
     DB_ECHO: bool = False
     
     # JWT Authentication
@@ -36,9 +37,19 @@ class Settings(BaseSettings):
     # Google Business Profile API
     GOOGLE_API_KEY: str = ""
     
-    # OpenAI (for LangChain)
-    OPENAI_API_KEY: str = ""
-    OPENAI_MODEL: str = "gpt-4"
+    # Google Custom Search API (BIS brand mention discovery)
+    GOOGLE_CSE_API_KEY: str = ""
+    GOOGLE_CSE_ID: str = ""
+    
+    # YouTube Data API v3 (BIS)
+    YOUTUBE_API_KEY: str = ""
+    
+    # NewsAPI (BIS)
+    NEWS_API_KEY: str = ""
+    
+    # Groq (for LangChain - free tier 6000 req/day)
+    GROQ_API_KEY: str = ""
+    GROQ_MODEL: str = "llama-3.3-70b-versatile"
     
     # Reddit API
     REDDIT_CLIENT_ID: str = ""
