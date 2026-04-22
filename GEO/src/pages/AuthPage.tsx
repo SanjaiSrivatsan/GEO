@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Mail, Lock } from "lucide-react";
-import { login, register, APIError, getGoogleAuthUrl } from "../utils/api";
+import { login, register, APIError } from "../utils/api";
 import { setAuthToken } from "../utils/auth";
 
 type Mode = "login" | "signup";

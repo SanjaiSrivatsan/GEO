@@ -82,7 +82,6 @@ const valueHighlights = [
 export default function ConnectGooglePage({ onConnect, onSkip, onLogout }: ConnectGooglePageProps) {
   const [selectedProfiles, setSelectedProfiles] = useState<Set<string>>(new Set());
   const [googleProfiles, setGoogleProfiles] = useState<GoogleProfile[]>([]);
-  const [isLoadingProfiles, setIsLoadingProfiles] = useState(false);
   const [connectionState, setConnectionState] = useState<"disconnected" | "connecting" | "connected">("disconnected");
   const [connectedEmail, setConnectedEmail] = useState("");
   const [connectionIssue, setConnectionIssue] = useState<ConnectionError | null>(null);
@@ -108,7 +107,6 @@ export default function ConnectGooglePage({ onConnect, onSkip, onLogout }: Conne
   const permissionIssueActive = connectionState === "connected" && googleProfiles.some((profile) => profile.status === "Limited access");
 
   const loadLocations = useCallback(async () => {
-    setIsLoadingProfiles(true);
     try {
       const response = await getGoogleLocations();
       const mappedProfiles: GoogleProfile[] = response.locations.map((loc) => ({
@@ -137,8 +135,6 @@ export default function ConnectGooglePage({ onConnect, onSkip, onLogout }: Conne
     } catch {
       setConnectionIssue("oauth_failed");
       setFormError("Connected, but failed to load locations from Google.");
-    } finally {
-      setIsLoadingProfiles(false);
     }
   }, []);
 

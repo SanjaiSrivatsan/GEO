@@ -50,7 +50,6 @@ import {
   type GapIssueResponse,
   type ReinforcementPlanResponse,
   type TaskResponse as TaskResponseType,
-  type SimulationRunResponse,
   type SimulationListResponse,
   type ReasoningListResponse,
   type DriftReportResponse,

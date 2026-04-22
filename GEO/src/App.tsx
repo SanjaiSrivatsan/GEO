@@ -14,7 +14,6 @@ export default function App() {
   const [businessDetails, setBusinessDetails] =
     useState<BusinessDetails | null>(null);
   const [isEditingBusiness, setIsEditingBusiness] = useState(false);
-  const [isGoogleConnected, setIsGoogleConnected] = useState(false);
   const [hasCompletedGoogleStep, setHasCompletedGoogleStep] = useState(false);
   const [showBIS, setShowBIS] = useState(false);
 
@@ -26,7 +25,6 @@ export default function App() {
     setIsAuthed(false);
     setBusinessDetails(null);
     setIsEditingBusiness(false);
-    setIsGoogleConnected(false);
     setHasCompletedGoogleStep(false);
     setShowBIS(false);
   };
@@ -40,7 +38,6 @@ export default function App() {
     connected: boolean,
     details?: BusinessDetails,
   ) => {
-    setIsGoogleConnected(connected);
     if (connected) {
       setHasCompletedGoogleStep(true);
     }
