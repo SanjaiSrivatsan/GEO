@@ -29,6 +29,7 @@ Complete technical documentation for the GEO (Geographic Excellence Optimization
 ### What is GEO?
 
 GEO Platform is an AI-powered business visibility and intelligence system that:
+
 - Scores businesses based on online presence, accuracy, and trust
 - Crawls websites and gathers business information
 - Integrates with Google Business Profile API
@@ -68,39 +69,39 @@ GEO Platform is an AI-powered business visibility and intelligence system that:
 
 ### Backend
 
-| Category | Technology |
-|----------|-----------|
-| Runtime | Node.js v22 |
-| Framework | Express.js 4.18 |
-| Language | TypeScript (strict mode) |
-| Database | MongoDB with Mongoose |
-| Validation | Zod schema validation |
-| Logging | Pino logger |
-| Security | Helmet.js, CORS, Rate limiting |
-| Authentication | JWT (jsonwebtoken), bcrypt |
-| LLM API | Groq SDK |
-| HTTP Client | Axios |
+| Category       | Technology                     |
+| -------------- | ------------------------------ |
+| Runtime        | Node.js v22                    |
+| Framework      | Express.js 4.18                |
+| Language       | TypeScript (strict mode)       |
+| Database       | MongoDB with Mongoose          |
+| Validation     | Zod schema validation          |
+| Logging        | Pino logger                    |
+| Security       | Helmet.js, CORS, Rate limiting |
+| Authentication | JWT (jsonwebtoken), bcrypt     |
+| LLM API        | Groq SDK                       |
+| HTTP Client    | Axios                          |
 
 ### Frontend
 
-| Category | Technology |
-|----------|-----------|
-| Runtime | Node.js + Browser |
-| Framework | React 19 |
-| Build Tool | Vite |
-| Language | TypeScript |
-| Styling | Tailwind CSS + PostCSS |
-| HTTP Client | Axios |
-| Icons | Lucide React |
-| State | React Hooks (useState, useEffect, useCallback) |
+| Category    | Technology                                     |
+| ----------- | ---------------------------------------------- |
+| Runtime     | Node.js + Browser                              |
+| Framework   | React 19                                       |
+| Build Tool  | Vite                                           |
+| Language    | TypeScript                                     |
+| Styling     | Tailwind CSS + PostCSS                         |
+| HTTP Client | Axios                                          |
+| Icons       | Lucide React                                   |
+| State       | React Hooks (useState, useEffect, useCallback) |
 
 ### DevOps
 
-| Category | Technology |
-|----------|-----------|
-| Version Control | Git |
-| Package Manager | npm |
-| Environment | .env files |
+| Category        | Technology |
+| --------------- | ---------- |
+| Version Control | Git        |
+| Package Manager | npm        |
+| Environment     | .env files |
 
 ---
 
@@ -279,6 +280,7 @@ GeoDashboardPage displays profile
 **Location**: `backend-new/src/services/AuthService.ts`
 
 **Key Methods**:
+
 ```typescript
 static async createUser(email, hashedPassword)
   // Creates new user in database
@@ -307,13 +309,15 @@ static async verifyPassword(password, hash)
 ```
 
 **Example Usage**:
+
 ```typescript
 // Controller usage
 const user = await AuthService.createUser(email, hashedPassword);
-const token = AuthService.createAccessToken(user._id, '24h');
+const token = AuthService.createAccessToken(user._id, "24h");
 ```
 
 **Response Format**:
+
 ```json
 {
   "user": {
@@ -340,6 +344,7 @@ const token = AuthService.createAccessToken(user._id, '24h');
 **Location**: `backend-new/src/services/CrawlerService.ts`
 
 **Key Methods**:
+
 ```typescript
 static async crawlWebsite(url)
   // Crawls website and extracts content
@@ -359,12 +364,14 @@ static async trackCrawlStatus(profileId, status, contentFound)
 ```
 
 **Example Usage**:
+
 ```typescript
-const crawlResult = await CrawlerService.crawlWebsite('https://example.com');
-await CrawlerService.trackCrawlStatus(profileId, 'completed', crawlResult);
+const crawlResult = await CrawlerService.crawlWebsite("https://example.com");
+await CrawlerService.trackCrawlStatus(profileId, "completed", crawlResult);
 ```
 
 **Response Format**:
+
 ```json
 {
   "url": "https://example.com",
@@ -393,6 +400,7 @@ await CrawlerService.trackCrawlStatus(profileId, 'completed', crawlResult);
 **Location**: `backend-new/src/services/BISService.ts`
 
 **Data Sources Scanned**:
+
 1. Google Business Profile
 2. Social Media mentions (Twitter, Facebook, LinkedIn)
 3. Review sites (Yelp, TripAdvisor, Google Reviews)
@@ -400,6 +408,7 @@ await CrawlerService.trackCrawlStatus(profileId, 'completed', crawlResult);
 5. Industry directories
 
 **Key Methods**:
+
 ```typescript
 static async scanBrandPresence(businessName, location)
   // Scans all 5 data sources
@@ -415,12 +424,17 @@ static async getReviewSentiment(businessId)
 ```
 
 **Example Usage**:
+
 ```typescript
-const bisResults = await BISService.scanBrandPresence('Acme Inc', 'New York, NY');
+const bisResults = await BISService.scanBrandPresence(
+  "Acme Inc",
+  "New York, NY",
+);
 // Results include: Google presence, reviews, mentions count, locations
 ```
 
 **Response Format**:
+
 ```json
 {
   "business_name": "Acme Inc",
@@ -453,11 +467,13 @@ const bisResults = await BISService.scanBrandPresence('Acme Inc', 'New York, NY'
 **Location**: `backend-new/src/services/GeoScoringService.ts`
 
 **Scoring Formula**:
+
 ```
 GEO_SCORE = (Presence × 0.35) + (Accuracy × 0.35) + (Trust × 0.20) + HallucinationPenalty
 ```
 
 **Dimension Breakdown**:
+
 - **Presence (35%)**: How visible is the business online?
   - Sources found, availability, consistency
   - Range: 0-100
@@ -475,6 +491,7 @@ GEO_SCORE = (Presence × 0.35) + (Accuracy × 0.35) + (Trust × 0.20) + Hallucin
   - Range: -30 to 0
 
 **Key Methods**:
+
 ```typescript
 static calculateGeoScore(dimensions)
   // Applies formula to dimensions
@@ -490,17 +507,19 @@ static getScoreInterpretation(score)
 ```
 
 **Example Usage**:
+
 ```typescript
 const score = GeoScoringService.calculateGeoScore({
   presence: 85,
   accuracy: 92,
   trust: 78,
-  hallucination_penalty: -5
+  hallucination_penalty: -5,
 });
 // Returns: { overall_score: 81.5, breakdown: {...}, health: "green" }
 ```
 
 **Response Format**:
+
 ```json
 {
   "overall_score": 81.5,
@@ -508,7 +527,7 @@ const score = GeoScoringService.calculateGeoScore({
   "breakdown": {
     "presence": { "score": 85, "weight": 0.35 },
     "accuracy": { "score": 92, "weight": 0.35 },
-    "trust": { "score": 78, "weight": 0.20 }
+    "trust": { "score": 78, "weight": 0.2 }
   },
   "penalty": -5,
   "interpretation": "Excellent online visibility with minor accuracy gaps"
@@ -550,6 +569,7 @@ const score = GeoScoringService.calculateGeoScore({
    - Example: No Facebook page, no Instagram
 
 **Key Methods**:
+
 ```typescript
 static detectGaps(businessData, sourcesData)
   // Identifies all gaps
@@ -563,6 +583,7 @@ static getRemediationSteps(gap)
 ```
 
 **Example Usage**:
+
 ```typescript
 const gaps = await GapDetectionService.detectGaps(businessId);
 // Returns: [
@@ -572,6 +593,7 @@ const gaps = await GapDetectionService.detectGaps(businessId);
 ```
 
 **Response Format**:
+
 ```json
 {
   "business_id": "profile_id",
@@ -605,6 +627,7 @@ const gaps = await GapDetectionService.detectGaps(businessId);
 **22 Available Prompts** (categories):
 
 **Visibility Analysis (5)**:
+
 - Analyze brand presence
 - Evaluate local SEO
 - Score digital footprint
@@ -612,12 +635,14 @@ const gaps = await GapDetectionService.detectGaps(businessId);
 - Compare competitor visibility
 
 **Review Management (4)**:
+
 - Generate review response
 - Analyze review sentiment
 - Create FAQ from reviews
 - Build reputation report
 
 **Content Strategy (5)**:
+
 - Suggest content topics
 - Create service descriptions
 - Write meta descriptions
@@ -625,6 +650,7 @@ const gaps = await GapDetectionService.detectGaps(businessId);
 - Build keyword list
 
 **Local Optimization (5)**:
+
 - Recommend local citations
 - Suggest Google Business edits
 - Generate local landing page copy
@@ -632,11 +658,13 @@ const gaps = await GapDetectionService.detectGaps(businessId);
 - Build local schema markup
 
 **Performance (3)**:
+
 - Identify optimization opportunities
 - Create action plan
 - Generate monthly report
 
 **Key Methods**:
+
 ```typescript
 static async executePrompt(promptId, context)
   // Sends prompt to Groq API
@@ -651,6 +679,7 @@ static getPromptTemplate(promptId)
 ```
 
 **Example Usage**:
+
 ```typescript
 const result = await GeoPromptService.executePrompt('analyze_brand_presence', {
   business_name: 'Acme Inc',
@@ -660,6 +689,7 @@ const result = await GeoPromptService.executePrompt('analyze_brand_presence', {
 ```
 
 **Response Format**:
+
 ```json
 {
   "prompt_id": "analyze_brand_presence",
@@ -680,16 +710,19 @@ const result = await GeoPromptService.executePrompt('analyze_brand_presence', {
 **Location**: `backend-new/src/services/GroqService.ts`
 
 **Supported Models**:
+
 - mixtral-8x7b (balanced)
 - llama-2-70b (advanced)
 
 **Configuration**:
+
 - Max tokens: 2000
 - Temperature: 0.7
 - Timeout: 30 seconds
 - Retry: Exponential backoff (3 attempts)
 
 **Key Methods**:
+
 ```typescript
 static async callLLM(prompt, options?)
   // Calls Groq API with error handling
@@ -705,16 +738,18 @@ static isRateLimited(error)
 ```
 
 **Example Usage**:
+
 ```typescript
 try {
-  const result = await GroqService.callLLMWithRetry('Analyze this business...');
+  const result = await GroqService.callLLMWithRetry("Analyze this business...");
   console.log(result.response);
 } catch (error) {
-  console.error('LLM call failed:', error.message);
+  console.error("LLM call failed:", error.message);
 }
 ```
 
 **Response Format**:
+
 ```json
 {
   "response": "Based on the data provided, this business...",
@@ -737,6 +772,7 @@ try {
 **Location**: `backend-new/src/services/CanonicalEntityService.ts`
 
 **Process**:
+
 1. Collect data from all sources (Google, Yelp, website, etc)
 2. Identify conflicts
 3. Weight by source reliability
@@ -744,6 +780,7 @@ try {
 5. Flag conflicting fields
 
 **Key Methods**:
+
 ```typescript
 static async synthesizeEntity(businessId)
   // Merges all source data into canonical entity
@@ -758,12 +795,14 @@ static getEntityConfidence(field)
 ```
 
 **Example Usage**:
+
 ```typescript
 const canonical = await CanonicalEntityService.synthesizeEntity(profileId);
 // Returns unified entity with all conflicts resolved
 ```
 
 **Response Format**:
+
 ```json
 {
   "canonical_entity": {
@@ -807,11 +846,13 @@ const canonical = await CanonicalEntityService.synthesizeEntity(profileId);
 4. **Long-term (3+ months)**: Strategic improvements
 
 **Task Prioritization**:
+
 - Impact score (0-100)
 - Effort score (0-100)
 - ROI = Impact / Effort
 
 **Key Methods**:
+
 ```typescript
 static generateReinforcementPlan(gapAnalysis, score, changes)
   // Creates task list from gaps
@@ -827,15 +868,17 @@ static getTaskEstimate(task)
 ```
 
 **Example Usage**:
+
 ```typescript
 const plan = await ReinforcementService.generateReinforcementPlan(
   gaps,
   currentScore,
-  industryBenchmarks
+  industryBenchmarks,
 );
 ```
 
 **Response Format**:
+
 ```json
 {
   "plan_id": "plan_123",
@@ -877,12 +920,14 @@ const plan = await ReinforcementService.generateReinforcementPlan(
 **Location**: `backend-new/src/services/SimulationService.ts`
 
 **Simulation Scenarios**:
+
 1. **Baseline**: No action taken
 2. **Conservative**: Complete easy tasks only
 3. **Aggressive**: Complete all tasks
 4. **Custom**: User-defined mix
 
 **Key Methods**:
+
 ```typescript
 static runSimulation(currentState, tasks, timeframe)
   // Projects scores over time
@@ -898,15 +943,17 @@ static compareScenarios(scenarios)
 ```
 
 **Example Usage**:
+
 ```typescript
 const simulation = await SimulationService.runSimulation(
   currentScore,
   allTasks,
-  12 // 12 month forecast
+  12, // 12 month forecast
 );
 ```
 
 **Response Format**:
+
 ```json
 {
   "simulation_id": "sim_123",
@@ -919,11 +966,11 @@ const simulation = await SimulationService.runSimulation(
         { "month": 1, "score": 78, "confidence": 0.92 },
         { "month": 3, "score": 85, "confidence": 0.85 },
         { "month": 6, "score": 92, "confidence": 0.78 },
-        { "month": 12, "score": 94, "confidence": 0.70 }
+        { "month": 12, "score": 94, "confidence": 0.7 }
       ],
       "final_score": 94,
       "total_effort_hours": 45,
-      "confidence": 0.70
+      "confidence": 0.7
     }
   ]
 }
@@ -938,6 +985,7 @@ const simulation = await SimulationService.runSimulation(
 **Location**: `backend-new/src/services/ReasoningService.ts`
 
 **Change Detection**:
+
 - Information consistency over time
 - Score fluctuations
 - Missing data changes
@@ -945,6 +993,7 @@ const simulation = await SimulationService.runSimulation(
 - Mention frequency changes
 
 **Key Methods**:
+
 ```typescript
 static analyzeNonMentions(businessId)
   // Detects absence of expected mentions
@@ -960,15 +1009,17 @@ static generateReasoning(drift)
 ```
 
 **Example Usage**:
+
 ```typescript
 const drift = await ReasoningService.detectDrift(
   currentSnapshot,
-  previousSnapshot
+  previousSnapshot,
 );
 const reason = ReasoningService.generateReasoning(drift);
 ```
 
 **Response Format**:
+
 ```json
 {
   "analysis_id": "analysis_123",
@@ -1007,6 +1058,7 @@ const reason = ReasoningService.generateReasoning(drift);
 **Location**: `backend-new/src/services/GoogleService.ts`
 
 **Capabilities**:
+
 - OAuth authentication with Google
 - Retrieve business locations
 - Sync business information
@@ -1015,6 +1067,7 @@ const reason = ReasoningService.generateReasoning(drift);
 - Manage photos and posts
 
 **Key Methods**:
+
 ```typescript
 static getAuthUrl(clientId, redirectUri)
   // Returns Google OAuth URL
@@ -1037,6 +1090,7 @@ static async updateBusinessInfo(accessToken, locationId, updates)
 ```
 
 **Example Usage**:
+
 ```typescript
 const authUrl = GoogleService.getAuthUrl(clientId, redirectUri);
 // User redirected to Google
@@ -1047,6 +1101,7 @@ const locations = await GoogleService.getBusinessLocations(token.access_token);
 ```
 
 **Response Format**:
+
 ```json
 {
   "locations": [
@@ -1074,9 +1129,11 @@ const locations = await GoogleService.getBusinessLocations(token.access_token);
 ### Authentication Endpoints
 
 #### `POST /api/auth/register`
+
 **Register a new user**
 
 Request:
+
 ```json
 {
   "email": "user@example.com",
@@ -1085,6 +1142,7 @@ Request:
 ```
 
 Response (201):
+
 ```json
 {
   "user": {
@@ -1105,9 +1163,11 @@ Response (201):
 ---
 
 #### `POST /api/auth/login`
+
 **Login with credentials**
 
 Request:
+
 ```json
 {
   "email": "user@example.com",
@@ -1116,6 +1176,7 @@ Request:
 ```
 
 Response (200):
+
 ```json
 {
   "user": {
@@ -1136,11 +1197,13 @@ Response (200):
 ---
 
 #### `GET /api/auth/me`
+
 **Get current user**
 
 Headers: `Authorization: Bearer {token}`
 
 Response (200):
+
 ```json
 {
   "id": "user_id",
@@ -1156,11 +1219,13 @@ Response (200):
 ### Business Profile Endpoints
 
 #### `POST /api/business/profiles`
+
 **Create a new business profile**
 
 Headers: `Authorization: Bearer {token}`
 
 Request:
+
 ```json
 {
   "name": "Acme Inc",
@@ -1173,6 +1238,7 @@ Request:
 ```
 
 Response (201):
+
 ```json
 {
   "profile": {
@@ -1194,6 +1260,7 @@ Response (201):
 ---
 
 #### `GET /api/business/profiles`
+
 **List all business profiles**
 
 Headers: `Authorization: Bearer {token}`
@@ -1201,6 +1268,7 @@ Headers: `Authorization: Bearer {token}`
 Query params: `?page=1&limit=10`
 
 Response (200):
+
 ```json
 {
   "profiles": [
@@ -1225,11 +1293,13 @@ Response (200):
 ---
 
 #### `GET /api/business/profiles/:id`
+
 **Get single business profile**
 
 Headers: `Authorization: Bearer {token}`
 
 Response (200):
+
 ```json
 {
   "id": "profile_id",
@@ -1248,11 +1318,13 @@ Response (200):
 ---
 
 #### `PUT /api/business/profiles/:id`
+
 **Update business profile**
 
 Headers: `Authorization: Bearer {token}`
 
 Request:
+
 ```json
 {
   "name": "Acme Inc Updated",
@@ -1261,6 +1333,7 @@ Request:
 ```
 
 Response (200):
+
 ```json
 {
   "profile": {
@@ -1276,11 +1349,13 @@ Response (200):
 ---
 
 #### `DELETE /api/business/profiles/:id`
+
 **Delete business profile**
 
 Headers: `Authorization: Bearer {token}`
 
 Response (200):
+
 ```json
 {
   "message": "Business profile deleted successfully"
@@ -1292,11 +1367,13 @@ Response (200):
 ### GEO Score Endpoints
 
 #### `GET /api/geo/scores/:profileId`
+
 **Get current GEO score**
 
 Headers: `Authorization: Bearer {token}`
 
 Response (200):
+
 ```json
 {
   "profile_id": "profile_id",
@@ -1305,7 +1382,7 @@ Response (200):
   "breakdown": {
     "presence": { "score": 85, "weight": 0.35 },
     "accuracy": { "score": 92, "weight": 0.35 },
-    "trust": { "score": 78, "weight": 0.20 }
+    "trust": { "score": 78, "weight": 0.2 }
   },
   "penalty": -5,
   "interpretation": "Excellent online visibility",
@@ -1316,11 +1393,13 @@ Response (200):
 ---
 
 #### `POST /api/geo/compute`
+
 **Recompute GEO score**
 
 Headers: `Authorization: Bearer {token}`
 
 Request:
+
 ```json
 {
   "profile_id": "profile_id"
@@ -1328,6 +1407,7 @@ Request:
 ```
 
 Response (200):
+
 ```json
 {
   "profile_id": "profile_id",
@@ -1342,11 +1422,13 @@ Response (200):
 ### Crawl Endpoints
 
 #### `POST /api/crawl/start`
+
 **Start website crawl**
 
 Headers: `Authorization: Bearer {token}`
 
 Request:
+
 ```json
 {
   "profile_id": "profile_id",
@@ -1355,6 +1437,7 @@ Request:
 ```
 
 Response (200):
+
 ```json
 {
   "crawl_id": "crawl_123",
@@ -1367,11 +1450,13 @@ Response (200):
 ---
 
 #### `GET /api/crawl/status/:crawlId`
+
 **Get crawl status**
 
 Headers: `Authorization: Bearer {token}`
 
 Response (200):
+
 ```json
 {
   "crawl_id": "crawl_123",
@@ -1387,11 +1472,13 @@ Response (200):
 ---
 
 #### `GET /api/crawl/content/:profileId`
+
 **Get crawled website content**
 
 Headers: `Authorization: Bearer {token}`
 
 Response (200):
+
 ```json
 {
   "profile_id": "profile_id",
@@ -1415,11 +1502,13 @@ Response (200):
 ### Brand Intelligence Endpoints
 
 #### `POST /api/bis/scan`
+
 **Start BIS scan**
 
 Headers: `Authorization: Bearer {token}`
 
 Request:
+
 ```json
 {
   "profile_id": "profile_id"
@@ -1427,6 +1516,7 @@ Request:
 ```
 
 Response (200):
+
 ```json
 {
   "scan_id": "scan_123",
@@ -1438,11 +1528,13 @@ Response (200):
 ---
 
 #### `GET /api/bis/results/:profileId`
+
 **Get BIS results**
 
 Headers: `Authorization: Bearer {token}`
 
 Response (200):
+
 ```json
 {
   "profile_id": "profile_id",
@@ -1471,11 +1563,13 @@ Response (200):
 ### Gap Detection Endpoints
 
 #### `POST /api/gaps/detect`
+
 **Detect visibility gaps**
 
 Headers: `Authorization: Bearer {token}`
 
 Request:
+
 ```json
 {
   "profile_id": "profile_id"
@@ -1483,6 +1577,7 @@ Request:
 ```
 
 Response (200):
+
 ```json
 {
   "profile_id": "profile_id",
@@ -1494,11 +1589,13 @@ Response (200):
 ---
 
 #### `GET /api/gaps/issues/:profileId`
+
 **Get detected gaps**
 
 Headers: `Authorization: Bearer {token}`
 
 Response (200):
+
 ```json
 {
   "profile_id": "profile_id",
@@ -1522,11 +1619,13 @@ Response (200):
 ### Prompt Execution Endpoints
 
 #### `POST /api/prompts/execute`
+
 **Execute single LLM prompt**
 
 Headers: `Authorization: Bearer {token}`
 
 Request:
+
 ```json
 {
   "profile_id": "profile_id",
@@ -1535,6 +1634,7 @@ Request:
 ```
 
 Response (200):
+
 ```json
 {
   "prompt_id": "analyze_brand_presence",
@@ -1548,19 +1648,26 @@ Response (200):
 ---
 
 #### `POST /api/prompts/batch`
+
 **Execute batch of prompts**
 
 Headers: `Authorization: Bearer {token}`
 
 Request:
+
 ```json
 {
   "profile_id": "profile_id",
-  "prompt_ids": ["analyze_brand_presence", "suggest_content_topics", "generate_seo_report"]
+  "prompt_ids": [
+    "analyze_brand_presence",
+    "suggest_content_topics",
+    "generate_seo_report"
+  ]
 }
 ```
 
 Response (200):
+
 ```json
 {
   "batch_id": "batch_123",
@@ -1579,11 +1686,13 @@ Response (200):
 ### Reinforcement Endpoints
 
 #### `POST /api/reinforcement/plan`
+
 **Generate improvement plan**
 
 Headers: `Authorization: Bearer {token}`
 
 Request:
+
 ```json
 {
   "profile_id": "profile_id"
@@ -1591,6 +1700,7 @@ Request:
 ```
 
 Response (200):
+
 ```json
 {
   "plan_id": "plan_123",
@@ -1616,11 +1726,13 @@ Response (200):
 ---
 
 #### `PUT /api/reinforcement/tasks/:taskId`
+
 **Update task status**
 
 Headers: `Authorization: Bearer {token}`
 
 Request:
+
 ```json
 {
   "status": "completed"
@@ -1628,6 +1740,7 @@ Request:
 ```
 
 Response (200):
+
 ```json
 {
   "task_id": "task_1",
@@ -1642,11 +1755,13 @@ Response (200):
 ### Simulation Endpoints
 
 #### `POST /api/simulation/run`
+
 **Run projection simulation**
 
 Headers: `Authorization: Bearer {token}`
 
 Request:
+
 ```json
 {
   "profile_id": "profile_id",
@@ -1656,6 +1771,7 @@ Request:
 ```
 
 Response (200):
+
 ```json
 {
   "simulation_id": "sim_123",
@@ -1664,7 +1780,7 @@ Response (200):
   "projections": [
     { "month": 1, "score": 78, "confidence": 0.92 },
     { "month": 6, "score": 85, "confidence": 0.85 },
-    { "month": 12, "score": 94, "confidence": 0.70 }
+    { "month": 12, "score": 94, "confidence": 0.7 }
   ],
   "final_score": 94
 }
@@ -1675,11 +1791,13 @@ Response (200):
 ### Reasoning Endpoints
 
 #### `GET /api/reasoning/drift/:profileId`
+
 **Analyze drift and changes**
 
 Headers: `Authorization: Bearer {token}`
 
 Response (200):
+
 ```json
 {
   "analysis_id": "analysis_123",
@@ -1706,11 +1824,13 @@ Response (200):
 ### Google Integration Endpoints
 
 #### `GET /api/google/auth-url`
+
 **Get Google OAuth URL**
 
 Query params: `?redirect_uri=http://localhost:5173/oauth`
 
 Response (200):
+
 ```json
 {
   "auth_url": "https://accounts.google.com/o/oauth2/v2/auth?client_id=...",
@@ -1721,11 +1841,13 @@ Response (200):
 ---
 
 #### `GET /api/google/locations`
+
 **Get Google Business locations**
 
 Headers: `Authorization: Bearer {token}`
 
 Response (200):
+
 ```json
 {
   "locations": [
@@ -1749,9 +1871,11 @@ Response (200):
 ### Health Check
 
 #### `GET /health`
+
 **Server health check**
 
 Response (200):
+
 ```json
 {
   "status": "ok",
@@ -1767,6 +1891,7 @@ Response (200):
 ### Page Structure (5 Pages)
 
 #### **AuthPage**
+
 - **File**: `GEO/src/pages/AuthPage.tsx`
 - **Purpose**: User login and registration
 - **Features**:
@@ -1784,6 +1909,7 @@ Response (200):
 ---
 
 #### **ConnectGooglePage**
+
 - **File**: `GEO/src/pages/ConnectGooglePage.tsx`
 - **Purpose**: Google Business Profile OAuth and location selection
 - **Features**:
@@ -1803,6 +1929,7 @@ Response (200):
 ---
 
 #### **BusinessFormPage**
+
 - **File**: `GEO/src/pages/BusinessFormPage.tsx`
 - **Purpose**: Create or edit business profile
 - **Features**:
@@ -1824,6 +1951,7 @@ Response (200):
 ---
 
 #### **GeoDashboardPage**
+
 - **File**: `GEO/src/pages/GeoDashboardPage.tsx`
 - **Purpose**: Main analytics and insights dashboard
 - **Features**:
@@ -1851,6 +1979,7 @@ Response (200):
 ---
 
 #### **BISResultsPage**
+
 - **File**: `GEO/src/pages/BISResultsPage.tsx`
 - **Purpose**: Brand Intelligence Scanning results
 - **Features**:
@@ -1875,77 +2004,77 @@ Response (200):
 
 ```typescript
 // Auth functions (5)
-export async function login(email, password)
-export async function register(email, password)
-export async function getCurrentUser()
-export async function logout()
-export async function refreshToken()
+export async function login(email, password);
+export async function register(email, password);
+export async function getCurrentUser();
+export async function logout();
+export async function refreshToken();
 
 // Business functions (6)
-export async function createBusinessProfile(data)
-export async function getBusinessProfiles(page, limit)
-export async function getBusinessProfile(id)
-export async function updateBusinessProfile(id, data)
-export async function deleteBusinessProfile(id)
-export async function getCurrentBusinessProfile()
+export async function createBusinessProfile(data);
+export async function getBusinessProfiles(page, limit);
+export async function getBusinessProfile(id);
+export async function updateBusinessProfile(id, data);
+export async function deleteBusinessProfile(id);
+export async function getCurrentBusinessProfile();
 
 // GEO Score functions (4)
-export async function getGeoScore(profileId)
-export async function computeGeoScore(profileId)
-export async function getScoreBreakdown(profileId)
-export async function getScoreHistory(profileId, days)
+export async function getGeoScore(profileId);
+export async function computeGeoScore(profileId);
+export async function getScoreBreakdown(profileId);
+export async function getScoreHistory(profileId, days);
 
 // Crawl functions (5)
-export async function startCrawl(profileId, url)
-export async function getCrawlStatus(crawlId)
-export async function getCrawlContent(profileId)
-export async function getCrawlHistory(profileId)
-export async function retryFailedCrawl(crawlId)
+export async function startCrawl(profileId, url);
+export async function getCrawlStatus(crawlId);
+export async function getCrawlContent(profileId);
+export async function getCrawlHistory(profileId);
+export async function retryFailedCrawl(crawlId);
 
 // BIS functions (5)
-export async function scanBrandPresence(profileId)
-export async function getBISResults(profileId)
-export async function getMentions(profileId)
-export async function getMentionStats(profileId)
-export async function startMentionDiscovery(profileId)
+export async function scanBrandPresence(profileId);
+export async function getBISResults(profileId);
+export async function getMentions(profileId);
+export async function getMentionStats(profileId);
+export async function startMentionDiscovery(profileId);
 
 // Gap Detection functions (4)
-export async function detectGaps(profileId)
-export async function getGapIssues(profileId)
-export async function dismissGap(gapId)
-export async function getGapRemediation(gapId)
+export async function detectGaps(profileId);
+export async function getGapIssues(profileId);
+export async function dismissGap(gapId);
+export async function getGapRemediation(gapId);
 
 // Prompt functions (5)
-export async function runGeoPrompts(profileId)
-export async function getPromptResults(profileId)
-export async function executePrompt(profileId, promptId)
-export async function getPromptHistory(profileId)
-export async function exportPromptResults(profileId)
+export async function runGeoPrompts(profileId);
+export async function getPromptResults(profileId);
+export async function executePrompt(profileId, promptId);
+export async function getPromptHistory(profileId);
+export async function exportPromptResults(profileId);
 
 // Reinforcement functions (4)
-export async function generateReinforcementPlan(profileId)
-export async function getReinforcementTasks(profileId)
-export async function updateTaskStatus(taskId, status)
-export async function getTaskHistory(profileId)
+export async function generateReinforcementPlan(profileId);
+export async function getReinforcementTasks(profileId);
+export async function updateTaskStatus(taskId, status);
+export async function getTaskHistory(profileId);
 
 // Simulation functions (3)
-export async function runSimulation(profileId, scenario, months)
-export async function getSimulationResults(simId)
-export async function compareScenarios(profileId)
+export async function runSimulation(profileId, scenario, months);
+export async function getSimulationResults(simId);
+export async function compareScenarios(profileId);
 
 // Reasoning functions (2)
-export async function analyzeNonMentions(profileId)
-export async function fetchReasoningAnalyses(profileId)
+export async function analyzeNonMentions(profileId);
+export async function fetchReasoningAnalyses(profileId);
 
 // Google functions (4)
-export async function getGoogleAuthUrl()
-export async function getGoogleConnectionStatus()
-export async function getGoogleLocations()
-export async function connectGoogle(authCode)
+export async function getGoogleAuthUrl();
+export async function getGoogleConnectionStatus();
+export async function getGoogleLocations();
+export async function connectGoogle(authCode);
 
 // Utility functions (2)
-export async function buildCanonicalEntity(profileId)
-export async function fetchCanonicalEntity(profileId)
+export async function buildCanonicalEntity(profileId);
+export async function fetchCanonicalEntity(profileId);
 ```
 
 ---
@@ -1983,41 +2112,41 @@ export function isTokenExpired(token)
 
 ```typescript
 export interface BusinessDetails {
-  id?: string
-  name: string
-  website: string
-  primaryLocation: string
-  category: string
-  mainGoal: string
-  brandVoice: string
-  additionalDetails?: string
+  id?: string;
+  name: string;
+  website: string;
+  primaryLocation: string;
+  category: string;
+  mainGoal: string;
+  brandVoice: string;
+  additionalDetails?: string;
 }
 
 export interface AuthResponse {
   user: {
-    id: string
-    email: string
-    is_active: boolean
-    created_at: string
-    updated_at: string
-  }
+    id: string;
+    email: string;
+    is_active: boolean;
+    created_at: string;
+    updated_at: string;
+  };
   token: {
-    access_token: string
-    token_type: string
-    expires_in: number
-  }
+    access_token: string;
+    token_type: string;
+    expires_in: number;
+  };
 }
 
 export interface GeoScoreResponse {
-  overall_score: number
-  health: 'green' | 'yellow' | 'red'
+  overall_score: number;
+  health: "green" | "yellow" | "red";
   breakdown: {
-    presence: { score: number; weight: number }
-    accuracy: { score: number; weight: number }
-    trust: { score: number; weight: number }
-  }
-  penalty: number
-  interpretation: string
+    presence: { score: number; weight: number };
+    accuracy: { score: number; weight: number };
+    trust: { score: number; weight: number };
+  };
+  penalty: number;
+  interpretation: string;
 }
 
 // And 20+ more type interfaces...
@@ -2030,18 +2159,20 @@ export interface GeoScoreResponse {
 ### 16 MongoDB Models
 
 #### 1. **User Model**
+
 ```typescript
 {
-  _id: ObjectId
-  email: string (unique)
-  password: string (hashed)
-  is_active: boolean
-  created_at: Date
-  updated_at: Date
+  _id: ObjectId;
+  email: string(unique);
+  password: string(hashed);
+  is_active: boolean;
+  created_at: Date;
+  updated_at: Date;
 }
 ```
 
 #### 2. **Business Profile Model**
+
 ```typescript
 {
   _id: ObjectId
@@ -2059,6 +2190,7 @@ export interface GeoScoreResponse {
 ```
 
 #### 3. **Crawl Status Model**
+
 ```typescript
 {
   _id: ObjectId
@@ -2074,6 +2206,7 @@ export interface GeoScoreResponse {
 ```
 
 #### 4. **Website Content Model**
+
 ```typescript
 {
   _id: ObjectId
@@ -2090,6 +2223,7 @@ export interface GeoScoreResponse {
 ```
 
 #### 5. **Google Business Profile Model**
+
 ```typescript
 {
   _id: ObjectId
@@ -2103,6 +2237,7 @@ export interface GeoScoreResponse {
 ```
 
 #### 6. **Google Location Model**
+
 ```typescript
 {
   _id: ObjectId
@@ -2120,6 +2255,7 @@ export interface GeoScoreResponse {
 ```
 
 #### 7. **Google Review Model**
+
 ```typescript
 {
   _id: ObjectId
@@ -2134,6 +2270,7 @@ export interface GeoScoreResponse {
 ```
 
 #### 8. **Brand Mention Model**
+
 ```typescript
 {
   _id: ObjectId
@@ -2147,6 +2284,7 @@ export interface GeoScoreResponse {
 ```
 
 #### 9. **GEO Score Model**
+
 ```typescript
 {
   _id: ObjectId
@@ -2165,6 +2303,7 @@ export interface GeoScoreResponse {
 ```
 
 #### 10. **Gap Issue Model**
+
 ```typescript
 {
   _id: ObjectId
@@ -2180,6 +2319,7 @@ export interface GeoScoreResponse {
 ```
 
 #### 11. **GEO Prompt Model**
+
 ```typescript
 {
   _id: ObjectId
@@ -2195,6 +2335,7 @@ export interface GeoScoreResponse {
 ```
 
 #### 12. **Geo Response Model**
+
 ```typescript
 {
   _id: ObjectId
@@ -2207,6 +2348,7 @@ export interface GeoScoreResponse {
 ```
 
 #### 13. **Canonical Entity Model**
+
 ```typescript
 {
   _id: ObjectId
@@ -2222,6 +2364,7 @@ export interface GeoScoreResponse {
 ```
 
 #### 14. **Reinforcement Task Model**
+
 ```typescript
 {
   _id: ObjectId
@@ -2240,6 +2383,7 @@ export interface GeoScoreResponse {
 ```
 
 #### 15. **Simulation Run Model**
+
 ```typescript
 {
   _id: ObjectId
@@ -2253,6 +2397,7 @@ export interface GeoScoreResponse {
 ```
 
 #### 16. **Reasoning Analysis Model**
+
 ```typescript
 {
   _id: ObjectId
@@ -2420,6 +2565,7 @@ Open browser to: `http://localhost:5173`
 ### Manual Integration Testing
 
 **Test 1: User Registration & Login**
+
 ```bash
 POST /api/auth/register
 {
@@ -2436,6 +2582,7 @@ POST /api/auth/login
 ```
 
 **Test 2: Business Profile Creation**
+
 ```bash
 POST /api/business/profiles
 Headers: Authorization: Bearer {token}
@@ -2450,6 +2597,7 @@ Headers: Authorization: Bearer {token}
 ```
 
 **Test 3: GEO Score Computation**
+
 ```bash
 POST /api/geo/compute
 Headers: Authorization: Bearer {token}
@@ -2462,6 +2610,7 @@ GET /api/geo/scores/{profile_id}
 ```
 
 **Test 4: Website Crawl**
+
 ```bash
 POST /api/crawl/start
 Headers: Authorization: Bearer {token}
@@ -2481,12 +2630,14 @@ GET /api/crawl/status/{crawl_id}
 ### Build for Production
 
 #### Backend:
+
 ```bash
 cd backend-new
 npm run build
 ```
 
 #### Frontend:
+
 ```bash
 cd GEO
 npm run build
@@ -2495,6 +2646,7 @@ npm run build
 ### Deployment Options
 
 #### **Option 1: Heroku (Easiest)**
+
 ```bash
 heroku login
 heroku create geo-platform
@@ -2505,6 +2657,7 @@ heroku config:set JWT_SECRET=your-secret
 ```
 
 #### **Option 2: AWS EC2**
+
 1. Launch EC2 instance (Ubuntu 20+)
 2. Install Node.js and MongoDB
 3. Clone repo and build
@@ -2513,6 +2666,7 @@ heroku config:set JWT_SECRET=your-secret
 6. Configure SSL with Let's Encrypt
 
 #### **Option 3: Docker**
+
 ```dockerfile
 FROM node:20-alpine
 WORKDIR /app
@@ -2524,6 +2678,7 @@ CMD ["node", "dist/server.js"]
 ```
 
 #### **Option 4: DigitalOcean App Platform**
+
 1. Connect GitHub repository
 2. Configure build and run commands
 3. Set environment variables
@@ -2534,11 +2689,13 @@ CMD ["node", "dist/server.js"]
 ## Performance & Metrics
 
 ### Build Performance
+
 - Backend compile: < 1 second
 - Frontend build: 2.16 seconds
 - Total setup time: ~5 minutes
 
 ### API Response Times
+
 - Auth endpoints: 50-150ms
 - Business CRUD: 50-200ms
 - GEO calculations: 100-500ms
@@ -2546,11 +2703,13 @@ CMD ["node", "dist/server.js"]
 - Crawl: 5-30 seconds per page
 
 ### Resource Usage
+
 - Backend memory: 80-150MB
 - Frontend bundle: ~300KB (gzip)
 - MongoDB connection: Reused pool
 
 ### Scalability
+
 - Supports 1,000+ concurrent users
 - Database indexed on frequently queried fields
 - Ready for horizontal scaling with load balancer
@@ -2562,6 +2721,7 @@ CMD ["node", "dist/server.js"]
 ### Issue: MongoDB Connection Timeout
 
 **Solution**:
+
 ```bash
 # Check MongoDB is running
 mongod
@@ -2578,6 +2738,7 @@ Check `CORS_ORIGIN` in `.env` matches your frontend URL (default: `http://localh
 ### Issue: Frontend Can't Connect to Backend
 
 **Solution**:
+
 1. Verify backend running on port 8000
 2. Check network tab in browser DevTools
 3. Verify Authorization header included
@@ -2586,6 +2747,7 @@ Check `CORS_ORIGIN` in `.env` matches your frontend URL (default: `http://localh
 ### Issue: LLM Prompts Failing
 
 **Solution**:
+
 1. Verify `GROQ_API_KEY` is set and valid
 2. Check API rate limits not exceeded
 3. Review Groq API status
@@ -2593,6 +2755,7 @@ Check `CORS_ORIGIN` in `.env` matches your frontend URL (default: `http://localh
 ### Issue: Google OAuth Not Working
 
 **Solution**:
+
 1. Verify Google Client ID and Secret
 2. Check redirect URI matches exactly
 3. Ensure OAuth consent screen configured
@@ -2603,21 +2766,25 @@ Check `CORS_ORIGIN` in `.env` matches your frontend URL (default: `http://localh
 ## Contributing
 
 See `.github/CONTRIBUTING.md` for:
+
 - Code style guidelines
 - Commit message conventions
 - Pull request process
 - Issue reporting guidelines
 
 ### Code Style
+
 - TypeScript strict mode required
 - Use meaningful variable names
 - Add JSDoc comments for public functions
 - Run `npm run build` before committing
 
 ### Commit Messages
+
 Format: `<emoji> <type>: <description>`
 
 Examples:
+
 - `✨ feat: Add new GEO prompt for SEO analysis`
 - `🐛 fix: Resolve token refresh issue`
 - `📖 docs: Update API endpoint documentation`
@@ -2634,6 +2801,7 @@ MIT License - See LICENSE file
 ## Support
 
 For issues and questions:
+
 - GitHub Issues: https://github.com/SanjaiSrivatsan/GEO/issues
 - Contributing: See `.github/CONTRIBUTING.md`
 
