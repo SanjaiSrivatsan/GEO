@@ -3,7 +3,7 @@ import { getIsConnected } from '../config/database.js';
 
 const router = Router();
 
-router.get('/health', (_req, res: Response) => {
+const healthHandler = (_req: unknown, res: Response) => {
   const isDbConnected = getIsConnected();
 
   res.json({
@@ -11,6 +11,10 @@ router.get('/health', (_req, res: Response) => {
     timestamp: new Date().toISOString(),
     database: isDbConnected ? 'connected' : 'disconnected',
   });
-});
+};
+
+// Support both `/api/health` and `/api/health/health` while mounted in app.ts.
+router.get('/', healthHandler);
+router.get('/health', healthHandler);
 
 export default router;

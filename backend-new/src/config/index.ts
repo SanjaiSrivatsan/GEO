@@ -65,6 +65,11 @@ function validateConfig(): Config {
   const nodeEnv = (process.env.NODE_ENV || 'development') as 'development' | 'production' | 'test';
   const mongodbUrl = process.env.MONGODB_URL;
   const jwtSecret = process.env.JWT_SECRET;
+  const corsOriginsValue = process.env.CORS_ORIGINS || process.env.CORS_ORIGIN || 'http://localhost:5173,http://localhost:3000';
+  const rateLimitPerMinute = parseInt(
+    process.env.RATE_LIMIT_PER_MINUTE || process.env.RATE_LIMIT_MAX_REQUESTS || '60',
+    10,
+  );
 
   if (!mongodbUrl) {
     throw new Error('MONGODB_URL environment variable is required');
@@ -89,7 +94,7 @@ function validateConfig(): Config {
     jwtAlgorithm: process.env.JWT_ALGORITHM || 'HS256',
     accessTokenExpireMinutes: parseInt(process.env.ACCESS_TOKEN_EXPIRE_MINUTES || '1440', 10),
 
-    corsOrigins: (process.env.CORS_ORIGINS || 'http://localhost:5173,http://localhost:3000').split(',').map((origin) => origin.trim()),
+    corsOrigins: corsOriginsValue.split(',').map((origin) => origin.trim()),
 
     googleClientId: process.env.GOOGLE_CLIENT_ID || '',
     googleClientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
@@ -111,7 +116,7 @@ function validateConfig(): Config {
     redisUrl: process.env.REDIS_URL || 'redis://localhost:6379/0',
 
     rateLimitEnabled: process.env.RATE_LIMIT_ENABLED !== 'false',
-    rateLimitPerMinute: parseInt(process.env.RATE_LIMIT_PER_MINUTE || '60', 10),
+    rateLimitPerMinute,
 
     logLevel: process.env.LOG_LEVEL || 'info',
     logFile: process.env.LOG_FILE || 'logs/app.log',
