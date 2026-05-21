@@ -1,0 +1,130 @@
+// Crawl Status
+export const CRAWL_STATUS = {
+  NOT_STARTED: 'NOT_STARTED',
+  PENDING: 'PENDING',
+  IN_PROGRESS: 'IN_PROGRESS',
+  COMPLETED: 'COMPLETED',
+  FAILED: 'FAILED',
+} as const;
+
+// Prompt Categories
+export const PROMPT_CATEGORY = {
+  ENTITY_DEFINITION: 'ENTITY_DEFINITION',
+  CATEGORY_VISIBILITY: 'CATEGORY_VISIBILITY',
+  COMPARISON_ALTERNATIVES: 'COMPARISON_ALTERNATIVES',
+  TRUST_REVIEWS: 'TRUST_REVIEWS',
+  LOCAL_DISCOVERY: 'LOCAL_DISCOVERY',
+} as const;
+
+// Execution Status
+export const EXECUTION_STATUS = {
+  PENDING: 'PENDING',
+  IN_PROGRESS: 'IN_PROGRESS',
+  COMPLETED: 'COMPLETED',
+  FAILED: 'FAILED',
+  RETRYING: 'RETRYING',
+} as const;
+
+// Mention Type
+export const MENTION_TYPE = {
+  DIRECTORY: 'DIRECTORY',
+  REVIEW: 'REVIEW',
+  ARTICLE: 'ARTICLE',
+  BLOG: 'BLOG',
+  COMPARISON: 'COMPARISON',
+  SOCIAL: 'SOCIAL',
+  OTHER: 'OTHER',
+} as const;
+
+// Sentiment
+export const SENTIMENT = {
+  POSITIVE: 'POSITIVE',
+  NEUTRAL: 'NEUTRAL',
+  NEGATIVE: 'NEGATIVE',
+  UNKNOWN: 'UNKNOWN',
+} as const;
+
+// Mention Status
+export const MENTION_STATUS = {
+  DISCOVERED: 'DISCOVERED',
+  PROCESSED: 'PROCESSED',
+  IGNORED: 'IGNORED',
+} as const;
+
+// Gap Type
+export const GAP_TYPE = {
+  CATEGORY_MISMATCH: 'CATEGORY_MISMATCH',
+  SERVICE_DRIFT: 'SERVICE_DRIFT',
+  VERTICAL_ABSENCE: 'VERTICAL_ABSENCE',
+  MISSING_FAQ: 'MISSING_FAQ',
+  WEAK_GEO_BINDING: 'WEAK_GEO_BINDING',
+  INCONSISTENT_VOCABULARY: 'INCONSISTENT_VOCABULARY',
+} as const;
+
+// Gap Severity
+export const GAP_SEVERITY = {
+  CRITICAL: 'CRITICAL',
+  HIGH: 'HIGH',
+  MEDIUM: 'MEDIUM',
+  LOW: 'LOW',
+} as const;
+
+// Gap Status
+export const GAP_STATUS = {
+  ACTIVE: 'ACTIVE',
+  RESOLVED: 'RESOLVED',
+  DISMISSED: 'DISMISSED',
+} as const;
+
+// Task Impact
+export const TASK_IMPACT = {
+  HIGH: 'HIGH',
+  MEDIUM: 'MEDIUM',
+  LOW: 'LOW',
+} as const;
+
+// Task Status
+export const TASK_STATUS = {
+  PENDING: 'PENDING',
+  IN_PROGRESS: 'IN_PROGRESS',
+  COMPLETED: 'COMPLETED',
+  SKIPPED: 'SKIPPED',
+} as const;
+
+// Reinforcement Class
+export const REINFORCEMENT_CLASS = {
+  AUTHORITY_GAP: 'AUTHORITY_GAP',
+  RELEVANCE_GAP: 'RELEVANCE_GAP',
+  VISIBILITY_GAP: 'VISIBILITY_GAP',
+  CONTENT_GAP: 'CONTENT_GAP',
+  GEOGRAPHIC_GAP: 'GEOGRAPHIC_GAP',
+} as const;
+
+// Response Status
+export const RESPONSE_STATUS = {
+  SUCCESS: 'SUCCESS',
+  FAILED: 'FAILED',
+  PARTIAL: 'PARTIAL',
+} as const;
+
+// Session Status
+export const SESSION_STATUS = {
+  ACTIVE: 'ACTIVE',
+  ENDED: 'ENDED',
+  ARCHIVED: 'ARCHIVED',
+} as const;
+
+// GEO Score Formula
+export const GEO_SCORE_WEIGHTS = {
+  PRESENCE: 0.35,
+  ACCURACY: 0.35,
+  TRUST: 0.2,
+  HALLUCINATION_PENALTY: { min: -10, max: 0 },
+} as const;
+
+// Default pagination
+export const PAGINATION = {
+  DEFAULT_LIMIT: 100,
+  MAX_LIMIT: 500,
+  MIN_LIMIT: 1,
+} as const;

@@ -6,6 +6,7 @@
 import { getAuthToken, removeAuthToken } from "./auth";
 
 // Backend API base URL
+// ✅ Already points to new Node.js Express backend on port 8000
 const API_BASE_URL = "http://localhost:8000/api";
 
 /**
