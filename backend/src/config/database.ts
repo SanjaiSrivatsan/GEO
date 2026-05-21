@@ -8,22 +8,19 @@ export async function connectDB() {
   try {
     let uri = config.MONGODB_URI;
 
-    // Use MongoDB Memory Server in development/test when local MongoDB unavailable
-    if (
-      (config.NODE_ENV === 'development' || config.NODE_ENV === 'test') &&
-      config.MONGODB_URI.includes('localhost')
-    ) {
+    // Use MongoDB Memory Server in development/test
+    if (config.NODE_ENV === 'development' || config.NODE_ENV === 'test') {
       try {
         const { MongoMemoryServer } = await import('mongodb-memory-server');
         mongoServer = await MongoMemoryServer.create();
         uri = mongoServer.getUri();
-        logger.info('🧪 Using MongoDB Memory Server for development');
+        logger.info('🧪 MongoDB Memory Server started for development');
       } catch (err) {
         logger.warn('MongoDB Memory Server not available, using configured URI');
       }
     }
 
-    logger.info(`Connecting to MongoDB: ${uri.replace(/:[^:]*@/, ':****@')}`);
+    logger.info(`Connecting to MongoDB...`);
 
     await mongoose.connect(uri, {
       maxPoolSize: 10,
