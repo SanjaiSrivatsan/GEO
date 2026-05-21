@@ -1,8 +1,9 @@
 import bcryptjs from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-import { User } from '../models/index.js';
-import { config } from '../config/environment.js';
-import { AuthenticationError, ValidationError } from '../utils/errors.js';
+import * as jwt from 'jsonwebtoken';
+import { SignOptions } from 'jsonwebtoken';
+import { User } from '../models/index';
+import { config } from '../config/environment';
+import { AuthenticationError, ValidationError } from '../utils/errors';
 
 export class AuthService {
   static async createUser(email: string, password: string) {
@@ -64,9 +65,10 @@ export class AuthService {
   }
 
   static createAccessToken(userId: string): string {
-    const token = jwt.sign({ sub: userId }, config.JWT_SECRET, {
-      expiresIn: config.JWT_EXPIRE_IN,
-    });
+    const options: SignOptions = {
+      expiresIn: '1440m',
+    };
+    const token = jwt.sign({ sub: userId }, config.JWT_SECRET || 'default-secret', options);
     return token;
   }
 

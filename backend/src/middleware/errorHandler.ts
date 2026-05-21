@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import { ApiError } from '../utils/errors.js';
-import logger from '../config/logger.js';
+import { ApiError } from '../utils/errors';
+import logger from '../config/logger';
 
 export function errorHandler(
   err: unknown,

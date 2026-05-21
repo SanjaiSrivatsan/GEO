@@ -1,5 +1,5 @@
-import { BusinessProfile } from '../models/index.js';
-import { NotFoundError, ValidationError } from '../utils/errors.js';
+import { BusinessProfile } from '../models/index';
+import { NotFoundError, ValidationError } from '../utils/errors';
 import { Types } from 'mongoose';
 
 export class BusinessService {

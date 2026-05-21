@@ -1,3 +1,3 @@
-export { AuthService } from './AuthService.js';
-export { BusinessService } from './BusinessService.js';
-export { GeoScoringService } from './GeoScoringService.js';
+export { AuthService } from './AuthService';
+export { BusinessService } from './BusinessService';
+export { GeoScoringService } from './GeoScoringService';

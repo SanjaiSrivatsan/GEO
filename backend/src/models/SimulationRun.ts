@@ -57,7 +57,7 @@ const simulationRunSchema = new Schema<ISimulationRun>(
       default: 0,
     },
     promptResultsSnapshot: {
-      type: [Schema.Types.Mixed],
+      type: [Schema.Types.Mixed as any],
       default: [],
     },
     completedAt: Date,

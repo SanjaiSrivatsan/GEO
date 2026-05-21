@@ -54,7 +54,7 @@ const reasoningAnalysisSchema = new Schema<IReasoningAnalysis>(
       index: true,
     },
     suggestedActions: {
-      type: [Schema.Types.Mixed],
+      type: [Schema.Types.Mixed as any],
       default: [],
     },
     confidence: Number,

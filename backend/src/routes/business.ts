@@ -1,8 +1,8 @@
 import { Router, Response } from 'express';
-import BusinessService from '../services/BusinessService.js';
-import { AuthRequest, authMiddleware } from '../middleware/auth.js';
-import { ValidationError } from '../utils/errors.js';
-import { CreateBusinessProfileRequest, BusinessProfileResponse } from '../types/index.js';
+import BusinessService from '../services/BusinessService';
+import { AuthRequest, authMiddleware } from '../middleware/auth';
+import { ValidationError } from '../utils/errors';
+import { CreateBusinessProfileRequest, BusinessProfileResponse } from '../types/index';
 
 const router = Router();
 

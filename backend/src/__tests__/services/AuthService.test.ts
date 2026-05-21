@@ -1,6 +1,6 @@
-import { AuthService } from '../../services/AuthService.js';
-import { User } from '../../models/User.js';
-import { ValidationError, AuthenticationError } from '../../utils/errors.js';
+import { AuthService } from '../../services/AuthService';
+import { User } from '../../models/User';
+import { ValidationError, AuthenticationError } from '../../utils/errors';
 
 jest.mock('../../models/User.js');
 

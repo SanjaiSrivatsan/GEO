@@ -53,7 +53,7 @@ const canonicalEntitySchema = new Schema<ICanonicalEntity>(
       default: [],
     },
     vocabularyClusters: {
-      type: [Schema.Types.Mixed],
+      type: [Schema.Types.Mixed as any],
       default: [],
     },
     rawSignals: {

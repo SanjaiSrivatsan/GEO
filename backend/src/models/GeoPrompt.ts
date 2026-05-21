@@ -1,7 +1,7 @@
-import { Schema, model, Document } from 'mongoose';
+import { Schema, model, Document, Types } from 'mongoose';
 
 export interface IGeoPrompt extends Document {
-  _id: string;
+  _id: Types.ObjectId;
   promptId: string;
   version: string;
   category: string;
@@ -21,10 +21,6 @@ export interface IGeoPrompt extends Document {
 
 const geoPromptSchema = new Schema<IGeoPrompt>(
   {
-    _id: {
-      type: String,
-      default: () => require('crypto').randomUUID(),
-    },
     promptId: {
       type: String,
       required: true,

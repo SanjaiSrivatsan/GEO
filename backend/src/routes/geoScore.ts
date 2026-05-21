@@ -1,7 +1,7 @@
 import { Router, Response } from 'express';
-import GeoScoringService from '../services/GeoScoringService.js';
-import { AuthRequest, authMiddleware } from '../middleware/auth.js';
-import { GeoScoreResponse } from '../types/index.js';
+import GeoScoringService from '../services/GeoScoringService';
+import { AuthRequest, authMiddleware } from '../middleware/auth';
+import { GeoScoreResponse } from '../types/index';
 
 const router = Router();
 

@@ -1,12 +1,31 @@
 import mongoose from 'mongoose';
-import { config } from './environment.js';
-import logger from './logger.js';
+import { config } from './environment';
+import logger from './logger';
+
+let mongoServer: any;
 
 export async function connectDB() {
   try {
-    logger.info(`Connecting to MongoDB: ${config.MONGODB_URI.replace(/:[^:]*@/, ':****@')}`);
+    let uri = config.MONGODB_URI;
 
-    await mongoose.connect(config.MONGODB_URI, {
+    // Use MongoDB Memory Server in development/test when local MongoDB unavailable
+    if (
+      (config.NODE_ENV === 'development' || config.NODE_ENV === 'test') &&
+      config.MONGODB_URI.includes('localhost')
+    ) {
+      try {
+        const { MongoMemoryServer } = await import('mongodb-memory-server');
+        mongoServer = await MongoMemoryServer.create();
+        uri = mongoServer.getUri();
+        logger.info('🧪 Using MongoDB Memory Server for development');
+      } catch (err) {
+        logger.warn('MongoDB Memory Server not available, using configured URI');
+      }
+    }
+
+    logger.info(`Connecting to MongoDB: ${uri.replace(/:[^:]*@/, ':****@')}`);
+
+    await mongoose.connect(uri, {
       maxPoolSize: 10,
       minPoolSize: 5,
     });
@@ -32,6 +51,10 @@ export async function connectDB() {
 export async function disconnectDB() {
   try {
     await mongoose.disconnect();
+    if (mongoServer) {
+      await mongoServer.stop();
+      logger.info('MongoDB Memory Server stopped');
+    }
     logger.info('MongoDB connection closed');
   } catch (error) {
     logger.error(`Error disconnecting from MongoDB: ${error instanceof Error ? error.message : String(error)}`);

@@ -1,8 +1,8 @@
 import { Router, Response } from 'express';
-import AuthService from '../services/AuthService.js';
-import { AuthRequest, authMiddleware } from '../middleware/auth.js';
-import { ValidationError } from '../utils/errors.js';
-import { AuthResponse, UserResponse, TokenResponse } from '../types/index.js';
+import AuthService from '../services/AuthService';
+import { AuthRequest, authMiddleware } from '../middleware/auth';
+import { ValidationError } from '../utils/errors';
+import { AuthResponse, UserResponse, TokenResponse } from '../types/index';
 
 const router = Router();
 

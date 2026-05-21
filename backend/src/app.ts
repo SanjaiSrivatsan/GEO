@@ -2,26 +2,26 @@ import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import 'express-async-errors';
 
-import { config } from './config/environment.js';
-import logger from './config/logger.js';
-import { connectDB } from './config/database.js';
-import { errorHandler } from './middleware/errorHandler.js';
+import { config } from './config/environment';
+import logger from './config/logger';
+import { connectDB } from './config/database';
+import { errorHandler } from './middleware/errorHandler';
 
 // Import routes
-import healthRouter from './routes/health.js';
-import authRouter from './routes/auth.js';
-import businessRouter from './routes/business.js';
-import geoScoreRouter from './routes/geoScore.js';
-import crawlRouter from './routes/crawl.js';
-import googleRouter from './routes/google.js';
-import mentionsRouter from './routes/mentions.js';
-import geoPromptsRouter from './routes/geoPrompts.js';
-import canonicalEntityRouter from './routes/canonicalEntity.js';
-import gapDetectionRouter from './routes/gapDetection.js';
-import reinforcementRouter from './routes/reinforcement.js';
-import simulationRouter from './routes/simulation.js';
-import reasoningRouter from './routes/reasoning.js';
-import bisRouter from './routes/bis.js';
+import healthRouter from './routes/health';
+import authRouter from './routes/auth';
+import businessRouter from './routes/business';
+import geoScoreRouter from './routes/geoScore';
+import crawlRouter from './routes/crawl';
+import googleRouter from './routes/google';
+import mentionsRouter from './routes/mentions';
+import geoPromptsRouter from './routes/geoPrompts';
+import canonicalEntityRouter from './routes/canonicalEntity';
+import gapDetectionRouter from './routes/gapDetection';
+import reinforcementRouter from './routes/reinforcement';
+import simulationRouter from './routes/simulation';
+import reasoningRouter from './routes/reasoning';
+import bisRouter from './routes/bis';
 
 const app = express();
 

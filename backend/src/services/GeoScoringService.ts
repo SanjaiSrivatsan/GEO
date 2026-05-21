@@ -1,7 +1,7 @@
-import { GeoScore, GeoPromptResult, BusinessProfile } from '../models/index.js';
-import { NotFoundError, ValidationError } from '../utils/errors.js';
+import { GeoScore, GeoPromptResult, BusinessProfile } from '../models/index';
+import { NotFoundError, ValidationError } from '../utils/errors';
 import { Types } from 'mongoose';
-import { GEO_SCORE_WEIGHTS } from '../utils/constants.js';
+import { GEO_SCORE_WEIGHTS } from '../utils/constants';
 
 export class GeoScoringService {
   static async computeScore(
