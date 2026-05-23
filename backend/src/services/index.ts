@@ -1,3 +1,13 @@
 export { AuthService } from './AuthService';
 export { BusinessService } from './BusinessService';
 export { GeoScoringService } from './GeoScoringService';
+export { GoogleService } from './GoogleService';
+export { CrawlerService } from './CrawlerService';
+export { MentionService } from './MentionService';
+export { GeoPromptService } from './GeoPromptService';
+export { CanonicalEntityService } from './CanonicalEntityService';
+export { GapDetectionService } from './GapDetectionService';
+export { ReinforcementService } from './ReinforcementService';
+export { SimulationService } from './SimulationService';
+export { ReasoningService } from './ReasoningService';
+export { BISService } from './BISService';
