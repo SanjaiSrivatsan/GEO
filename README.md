@@ -2,7 +2,7 @@
 
 AI-powered business visibility scoring system that analyzes how well your business appears in AI-generated search results and recommendations.
 
-## 🚀 Features
+## 🚀 Features 
 
 - **GEO Score Calculation** - Deterministic scoring based on 4 dimensions:
   - Presence Score (35%) - Brand mentions, citations, directory listings
